@@ -1,0 +1,57 @@
+{
+  "expo": {
+    "name": "Daily Planner",
+    "slug": "mandiol",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "mandiol",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#fdf8f5"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.mandiol.dailyplanner",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Mandiol only uses your location when you start a Safe Walk so trusted contacts can see you are safe.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Mandiol only uses your location when you start a Safe Walk so trusted contacts can see you are safe.",
+        "NSFaceIDUsageDescription": "Use Face ID to unlock the app.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "app.mandiol.dailyplanner",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#fdf8f5"
+      },
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT",
+        "SEND_SMS",
+        "VIBRATE"
+      ]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-local-authentication",
+      "expo-location",
+      "expo-font",
+      "expo-sqlite"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
