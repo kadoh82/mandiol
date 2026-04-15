@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --rose:#c4687a;--rose-light:#f0d4da;--rose-pale:#faf2f4;
+    --plum:#4a2637;--plum-mid:#7a4060;
+    --sage:#6b8f71;--sage-light:#d4e8d6;
+    --cream:#fdf8f5;--warm-white:#fff9f6;
+    --charcoal:#2c2c2c;--mid-grey:#6b6b6b;--light-grey:#e8e4e0;--border:#e0d8d4;
+    --emergency:#b83232;--emergency-light:#fdf0f0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--charcoal);font-size:15px;line-height:1.7;}
+
+  /* ===== DECOY SCREEN ===== */
+  #decoy-screen{position:fixed;inset:0;background:#f5f5f7;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;}
+  #decoy-screen h1{font-size:2rem;color:#1c1c1e;margin-bottom:8px;}
+  #decoy-screen p{color:#636366;font-size:14px;margin-bottom:40px;}
+  .decoy-pin-row{display:flex;gap:12px;margin-bottom:20px;}
+  .decoy-dot{width:14px;height:14px;border-radius:50%;border:2px solid #636366;background:transparent;transition:background 0.15s;}
+  .decoy-dot.filled{background:#1c1c1e;border-color:#1c1c1e;}
+  .decoy-keypad{display:grid;grid-template-columns:repeat(3,72px);gap:12px;}
+  .decoy-key{height:72px;border-radius:50%;background:#e5e5ea;border:none;font-size:22px;font-weight:400;color:#1c1c1e;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background 0.1s;}
+  .decoy-key:active{background:#c7c7cc;}
+  .decoy-key.del{background:transparent;font-size:16px;color:#636366;}
+  .decoy-error{color:#ff3b30;font-size:13px;height:18px;margin-top:8px;}
+
+  /* ===== FAKE DECOY APP ===== */
+  #fake-app{position:fixed;inset:0;background:#fff;z-index:9998;display:none;overflow-y:auto;font-family:'DM Sans',sans-serif;padding:40px 24px;}
+  #fake-app h2{font-size:1.5rem;margin-bottom:20px;color:#1c1c1e;}
+  .fake-list-item{padding:14px 0;border-bottom:1px solid #e5e5ea;font-size:15px;color:#1c1c1e;display:flex;justify-content:space-between;}
+  .fake-list-item span{color:#c7c7cc;}
+
+  /* ===== REAL APP ===== */
+  #real-app{display:none;}
+  
+  .emergency-bar{background:var(--emergency);color:white;text-align:center;padding:10px 20px;font-size:13px;font-weight:500;}
+  .emergency-bar a{color:white;font-weight:700;text-decoration:none;border-bottom:1px solid rgba(255,255,255,0.5);}
+  .quick-exit{position:fixed;bottom:20px;right:16px;background:var(--emergency);color:white;border:none;padding:10px 16px;border-radius:24px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;z-index:9999;box-shadow:0 4px 16px rgba(184,50,50,0.4);letter-spacing:0.3px;}
+  .quick-exit:hover{background:#8b1a1a;}
+
+  header{background:var(--plum);padding:0 20px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(74,38,55,0.3);}
+  .header-inner{max-width:1000px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:56px;}
+  .logo{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:white;letter-spacing:0.5px;}
+  .logo span{color:var(--rose-light);font-style:italic;}
+
+  nav{display:flex;gap:2px;flex-wrap:wrap;}
+  nav button{background:none;border:none;color:rgba(255,255,255,0.7);font-family:'DM Sans',sans-serif;font-size:11.5px;font-weight:500;padding:5px 9px;border-radius:4px;cursor:pointer;transition:all 0.2s;letter-spacing:0.2px;}
+  nav button:hover,nav button.active{background:rgba(255,255,255,0.12);color:white;}
+
+  .hero{background:linear-gradient(135deg,var(--plum) 0%,var(--plum-mid) 60%,var(--rose) 100%);padding:56px 24px 48px;text-align:center;color:white;}
+  .hero h1{font-family:'Cormorant Garamond',serif;font-size:clamp(2rem,6vw,3.4rem);font-weight:300;line-height:1.2;margin-bottom:14px;}
+  .hero h1 em{font-style:italic;color:var(--rose-light);}
+  .hero p{max-width:520px;margin:0 auto 24px;color:rgba(255,255,255,0.85);font-size:15px;}
+  .hero-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+  .btn-p{background:white;color:var(--plum);border:none;padding:11px 22px;border-radius:6px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.2s;}
+  .btn-p:hover{background:var(--rose-light);}
+  .btn-o{background:transparent;color:white;border:2px solid rgba(255,255,255,0.5);padding:11px 22px;border-radius:6px;font-family:'DM Sans',sans-serif;font-weight:500;font-size:13px;cursor:pointer;transition:all 0.2s;}
+  .btn-o:hover{border-color:white;background:rgba(255,255,255,0.1);}
+
+  main{max-width:1000px;margin:0 auto;padding:36px 20px 100px;}
+  .section{display:none;} .section.active{display:block;animation:fadeIn 0.3s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+  .sec-title{font-family:'Cormorant Garamond',serif;font-size:1.9rem;font-weight:400;color:var(--plum);margin-bottom:6px;}
+  .sec-sub{color:var(--mid-grey);margin-bottom:28px;font-size:14px;}
+
+  /* CARDS */
+  .grid-2{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:28px;}
+  .card{background:white;border:1px solid var(--border);border-radius:10px;padding:20px;cursor:pointer;transition:all 0.2s;border-left:4px solid var(--rose);}
+  .card:hover{box-shadow:0 4px 20px rgba(196,104,122,0.15);transform:translateY(-2px);}
+  .card h3{font-size:14px;font-weight:600;color:var(--plum);margin-bottom:5px;}
+  .card p{font-size:13px;color:var(--mid-grey);line-height:1.5;}
+  .tag{font-size:11px;background:var(--rose-pale);color:var(--rose);padding:2px 8px;border-radius:20px;display:inline-block;margin-top:8px;font-weight:500;}
+  .tag-sage{background:var(--sage-light);color:var(--sage);}
+
+  /* OFFENCE DETAIL */
+  .offence-detail{display:none;} .offence-detail.active{display:block;animation:fadeIn 0.3s ease;}
+  .back-btn{background:none;border:none;color:var(--plum-mid);font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;padding:0;margin-bottom:20px;font-weight:500;display:flex;align-items:center;gap:6px;}
+  .dc{background:white;border-radius:12px;border:1px solid var(--border);overflow:hidden;margin-bottom:18px;}
+  .dc-head{background:linear-gradient(135deg,var(--plum),var(--plum-mid));color:white;padding:22px 26px;}
+  .dc-head h2{font-family:'Cormorant Garamond',serif;font-size:1.7rem;font-weight:400;margin-bottom:4px;}
+  .dc-head p{color:rgba(255,255,255,0.75);font-size:13px;}
+  .dc-body{padding:26px;}
+  .plain{background:var(--sage-light);border-radius:8px;padding:16px 18px;margin-bottom:20px;border-left:4px solid var(--sage);}
+  .plain h4{color:var(--sage);font-size:12px;text-transform:uppercase;letter-spacing:0.7px;font-weight:600;margin-bottom:7px;}
+  .plain p{font-size:14px;line-height:1.6;color:#2a4a2e;}
+  .pts{background:var(--rose-pale);border-radius:8px;padding:16px 18px;margin-bottom:20px;border-left:4px solid var(--rose);}
+  .pts h4{color:var(--plum);font-size:12px;text-transform:uppercase;letter-spacing:0.7px;font-weight:600;margin-bottom:10px;}
+  .pi{display:flex;gap:9px;align-items:flex-start;margin-bottom:7px;}
+  .pn{background:var(--rose);color:white;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:2px;}
+  .pi p{font-size:13px;}
+  .ib h4{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.7px;color:var(--rose);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--rose-light);margin-top:20px;}
+  .ib p{font-size:13px;margin-bottom:7px;} .ib ul{padding-left:17px;} .ib li{font-size:13px;margin-bottom:5px;}
+
+  /* SAFETY BOX */
+  .sbox{background:var(--emergency-light);border:1px solid #fcc;border-radius:10px;padding:18px 22px;margin-bottom:24px;display:flex;gap:12px;align-items:flex-start;}
+  .sbox-icon{font-size:26px;flex-shrink:0;}
+  .sbox h4{font-weight:600;color:var(--emergency);margin-bottom:3px;font-size:14px;}
+  .sbox p{font-size:13px;color:#6b2020;}
+
+  /* TABS */
+  .sub-tabs{display:flex;gap:3px;border-bottom:2px solid var(--border);margin-bottom:24px;flex-wrap:wrap;}
+  .stab{background:none;border:none;padding:9px 14px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--mid-grey);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all 0.2s;}
+  .stab.active{color:var(--rose);border-bottom-color:var(--rose);}
+  .stab:hover{color:var(--plum-mid);}
+  .spanel{display:none;} .spanel.active{display:block;animation:fadeIn 0.2s ease;}
+
+  /* TIMELINE */
+  .timeline{position:relative;padding-left:30px;}
+  .timeline::before{content:'';position:absolute;left:9px;top:0;bottom:0;width:2px;background:var(--rose-light);}
+  .tstep{position:relative;margin-bottom:24px;}
+  .tdot{position:absolute;left:-30px;top:3px;width:20px;height:20px;background:var(--rose);border-radius:50%;display:flex;align-items:center;justify-content:center;}
+  .tdot span{color:white;font-size:10px;font-weight:700;}
+  .tstep h3{font-size:14px;font-weight:600;color:var(--plum);margin-bottom:5px;}
+  .tstep p{font-size:13px;color:var(--charcoal);line-height:1.6;}
+  .tnote{background:var(--sage-light);border-radius:6px;padding:9px 12px;margin-top:9px;font-size:13px;color:#2a4a2e;}
+  .twarn{background:var(--rose-pale);border-radius:6px;padding:9px 12px;margin-top:9px;font-size:13px;color:var(--plum);}
+
+  /* QUESTIONNAIRE */
+  .qcard{background:white;border-radius:12px;border:1px solid var(--border);padding:28px;max-width:660px;margin:0 auto;}
+  .qprog{height:4px;background:var(--light-grey);border-radius:2px;margin-bottom:24px;}
+  .qprogf{height:100%;background:linear-gradient(90deg,var(--rose),var(--plum-mid));border-radius:2px;transition:width 0.4s;}
+  .qnum{font-size:12px;color:var(--mid-grey);margin-bottom:7px;font-weight:500;}
+  .qq{font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:400;color:var(--plum);margin-bottom:20px;line-height:1.4;}
+  .qopts{display:flex;flex-direction:column;gap:9px;margin-bottom:24px;}
+  .qopt{background:var(--warm-white);border:2px solid var(--border);border-radius:8px;padding:13px 16px;cursor:pointer;transition:all 0.2s;font-size:13px;text-align:left;}
+  .qopt:hover{border-color:var(--rose);background:var(--rose-pale);}
+  .qopt.selected{border-color:var(--rose);background:var(--rose-pale);color:var(--plum);font-weight:500;}
+  .qnav{display:flex;justify-content:space-between;align-items:center;}
+  .btn-next{background:var(--rose);color:white;border:none;padding:11px 24px;border-radius:6px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.2s;}
+  .btn-next:hover{background:var(--plum);}
+  .btn-next:disabled{background:var(--light-grey);color:var(--mid-grey);cursor:not-allowed;}
+  .btn-backq{background:none;border:1px solid var(--border);color:var(--mid-grey);padding:11px 18px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;}
+  .qres{text-align:center;padding:16px;}
+  .qres-icon{font-size:44px;margin-bottom:14px;}
+  .qres h3{font-family:'Cormorant Garamond',serif;font-size:1.6rem;color:var(--plum);margin-bottom:10px;}
+  .qres p{color:var(--mid-grey);font-size:14px;margin-bottom:16px;max-width:420px;margin-left:auto;margin-right:auto;}
+  .res-concerned{background:#fff3f3;border:1px solid #fcc;border-radius:10px;padding:18px;margin-bottom:16px;}
+  .res-concerned h4{color:var(--emergency);font-weight:600;margin-bottom:6px;}
+  .res-concerned p{color:#6b2020;font-size:13px;margin-bottom:0;}
+
+  /* EVIDENCE */
+  .evcat{background:white;border:1px solid var(--border);border-radius:10px;margin-bottom:14px;overflow:hidden;}
+  .evcat-h{background:var(--rose-pale);padding:14px 18px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;border-bottom:1px solid var(--border);}
+  .evcat-h h3{font-weight:600;color:var(--plum);font-size:14px;}
+  .evcat-b{padding:18px;}
+  .evtip{display:flex;gap:11px;align-items:flex-start;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--rose-pale);}
+  .evtip:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none;}
+  .evtip-icon{font-size:20px;flex-shrink:0;margin-top:2px;}
+  .evtip h4{font-size:13px;font-weight:600;color:var(--plum);margin-bottom:3px;}
+  .evtip p{font-size:13px;color:var(--mid-grey);line-height:1.5;}
+
+  /* CIVIL */
+  .civcard{background:white;border:1px solid var(--border);border-radius:10px;padding:22px;margin-bottom:14px;border-left:4px solid var(--sage);}
+  .civcard h3{font-size:15px;font-weight:600;color:var(--plum);margin-bottom:6px;}
+  .civtag{font-size:11px;background:var(--sage-light);color:var(--sage);padding:2px 8px;border-radius:20px;display:inline-block;margin-bottom:8px;font-weight:600;}
+  .civcard p{font-size:13px;line-height:1.6;margin-bottom:6px;} .civcard ul{padding-left:16px;} .civcard li{font-size:13px;margin-bottom:4px;}
+
+  /* SUPPORT */
+  .sfilt{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:20px;}
+  .filt{padding:7px 13px;border-radius:20px;border:1px solid var(--border);background:white;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.2s;color:var(--charcoal);}
+  .filt:hover,.filt.active{background:var(--plum);color:white;border-color:var(--plum);}
+  .sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
+  .scard{background:white;border:1px solid var(--border);border-radius:10px;padding:18px;transition:box-shadow 0.2s;}
+  .scard:hover{box-shadow:0 4px 16px rgba(0,0,0,0.08);}
+  .scard-top{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;}
+  .sicon{width:38px;height:38px;background:var(--rose-pale);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
+  .scard h3{font-size:13px;font-weight:600;color:var(--plum);margin-bottom:3px;}
+  .stype{font-size:11px;color:var(--rose);font-weight:600;}
+  .scard p{font-size:12px;color:var(--mid-grey);line-height:1.5;margin-bottom:10px;}
+  .scard a{font-size:12px;color:var(--rose);font-weight:500;text-decoration:none;border-bottom:1px solid var(--rose-light);}
+  .stags{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:8px;}
+  .stag{font-size:10px;background:var(--rose-pale);color:var(--plum-mid);padding:2px 6px;border-radius:10px;}
+
+  /* VIDEOS */
+  .vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:18px;}
+  .vcard{background:white;border:1px solid var(--border);border-radius:10px;overflow:hidden;transition:box-shadow 0.2s;}
+  .vcard:hover{box-shadow:0 4px 20px rgba(0,0,0,0.1);}
+  .vthumb{position:relative;padding-top:56.25%;background:var(--plum);}
+  .vthumb iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:none;}
+  .vinfo{padding:14px;}
+  .vinfo h3{font-size:13px;font-weight:600;color:var(--plum);margin-bottom:5px;}
+  .vinfo p{font-size:12px;color:var(--mid-grey);line-height:1.5;}
+  .vtag{font-size:11px;background:var(--rose-pale);color:var(--rose);padding:2px 8px;border-radius:10px;display:inline-block;margin-bottom:7px;font-weight:500;}
+
+  /* TRACKER */
+  .tracker-main{max-width:500px;margin:0 auto;}
+  .tracker-status{background:white;border-radius:12px;border:1px solid var(--border);padding:24px;text-align:center;margin-bottom:16px;}
+  .tracker-dot{width:16px;height:16px;border-radius:50%;background:#ccc;margin:0 auto 12px;transition:background 0.3s;}
+  .tracker-dot.active{background:var(--sage);box-shadow:0 0 0 6px rgba(107,143,113,0.2);animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 6px rgba(107,143,113,0.2)}50%{box-shadow:0 0 0 12px rgba(107,143,113,0.1)}}
+  .tracker-status h3{font-family:'Cormorant Garamond',serif;font-size:1.4rem;color:var(--plum);margin-bottom:6px;}
+  .tracker-status p{font-size:13px;color:var(--mid-grey);}
+  .tracker-btn{width:100%;padding:14px;border-radius:8px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:15px;cursor:pointer;border:none;margin-bottom:10px;transition:all 0.2s;}
+  .tracker-btn.start{background:var(--sage);color:white;}
+  .tracker-btn.start:hover{background:#4d7052;}
+  .tracker-btn.stop{background:var(--rose);color:white;}
+  .tracker-btn.stop:hover{background:var(--plum);}
+  .tracker-btn.sos{background:var(--emergency);color:white;font-size:18px;}
+  .tracker-btn.sos:hover{background:#8b1a1a;}
+  .tfield{background:white;border:1px solid var(--border);border-radius:8px;padding:12px 14px;width:100%;font-family:'DM Sans',sans-serif;font-size:14px;margin-bottom:10px;color:var(--charcoal);}
+  .tfield:focus{outline:none;border-color:var(--rose);}
+  .tlabel{font-size:12px;font-weight:600;color:var(--plum);margin-bottom:5px;display:block;text-transform:uppercase;letter-spacing:0.5px;}
+
+  /* CLARES LAW */
+  .clares-card{background:white;border:1px solid var(--border);border-radius:10px;padding:22px;margin-bottom:14px;border-left:4px solid var(--plum-mid);}
+  .clares-card h3{font-size:15px;font-weight:600;color:var(--plum);margin-bottom:6px;}
+  .clares-tag{font-size:11px;background:#f0e8f4;color:var(--plum-mid);padding:2px 8px;border-radius:20px;display:inline-block;margin-bottom:8px;font-weight:600;}
+  .clares-card p{font-size:13px;line-height:1.6;margin-bottom:6px;}
+  .clares-card ul{padding-left:16px;} .clares-card li{font-size:13px;margin-bottom:4px;}
+
+  /* CONVICTION BOX */
+  .conv-box{background:linear-gradient(135deg,var(--plum),var(--plum-mid));color:white;border-radius:12px;padding:28px;text-align:center;margin-bottom:24px;}
+  .conv-num{font-family:'Cormorant Garamond',serif;font-size:4rem;font-weight:300;color:var(--rose-light);line-height:1;}
+  .conv-box h3{font-size:15px;font-weight:600;margin-bottom:6px;}
+  .conv-box p{font-size:13px;color:rgba(255,255,255,0.8);max-width:400px;margin:0 auto;}
+
+  /* NON RECENT */
+  .caselaw-card{background:white;border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:12px;border-left:4px solid var(--plum-mid);}
+  .caselaw-card h3{font-size:14px;font-weight:600;color:var(--plum);margin-bottom:4px;}
+  .caselaw-tag{font-size:11px;background:#f0e8f4;color:var(--plum-mid);padding:2px 8px;border-radius:20px;display:inline-block;margin-bottom:8px;font-weight:600;}
+  .caselaw-card p{font-size:13px;color:var(--mid-grey);line-height:1.5;}
+
+  @media(max-width:600px){nav{display:none;}.hero{padding:36px 16px 28px;}main{padding:24px 14px 100px;}}
+</style>
+</head>
+<body>
+
+<!-- ===== DECOY PIN SCREEN ===== -->
+<div id="decoy-screen">
+  <h1>📅 Daily Planner</h1>
+  <p>Enter your PIN to continue</p>
+  <div class="decoy-pin-row">
+    <div class="decoy-dot" id="d0"></div><div class="decoy-dot" id="d1"></div>
+    <div class="decoy-dot" id="d2"></div><div class="decoy-dot" id="d3"></div>
+  </div>
+  <div class="decoy-keypad">
+    <button class="decoy-key" onclick="pinKey('1')">1</button>
+    <button class="decoy-key" onclick="pinKey('2')">2</button>
+    <button class="decoy-key" onclick="pinKey('3')">3</button>
+    <button class="decoy-key" onclick="pinKey('4')">4</button>
+    <button class="decoy-key" onclick="pinKey('5')">5</button>
+    <button class="decoy-key" onclick="pinKey('6')">6</button>
+    <button class="decoy-key" onclick="pinKey('7')">7</button>
+    <button class="decoy-key" onclick="pinKey('8')">8</button>
+    <button class="decoy-key" onclick="pinKey('9')">9</button>
+    <button class="decoy-key"></button>
+    <button class="decoy-key" onclick="pinKey('0')">0</button>
+    <button class="decoy-key del" onclick="pinDel()">⌫</button>
+  </div>
+  <div class="decoy-error" id="pin-error"></div>
+  <p style="margin-top:20px;font-size:11px;color:#aaa;">Hint: 1234</p>
+</div>
+
+<!-- ===== FAKE DECOY APP ===== -->
+<div id="fake-app">
+  <h2>📝 My Planner</h2>
+  <div class="fake-list-item">Buy milk, bread, eggs <span>Shopping</span></div>
+  <div class="fake-list-item">Call dentist re: appointment <span>To-do</span></div>
+  <div class="fake-list-item">Mum's birthday card <span>Reminder</span></div>
+  <div class="fake-list-item">Gym class — Tuesday 6pm <span>Schedule</span></div>
+  <div class="fake-list-item">Return library books <span>To-do</span></div>
+  <div class="fake-list-item">Pick up prescription <span>To-do</span></div>
+</div>
+
+<!-- ===== REAL APP ===== -->
+<div id="real-app">
+  <button class="quick-exit" onclick="quickExit()">EXIT ✕</button>
+
+  <div class="emergency-bar">
+    🚨 Danger? Call <a href="tel:999">999</a> &nbsp;|&nbsp; DA Helpline: <a href="tel:08082000247">0808 2000 247</a> (free, 24/7) &nbsp;|&nbsp; Rape Crisis: <a href="tel:08088029999">0808 802 9999</a> (free, 24/7)
+  </div>
+
+  <header>
+    <div class="header-inner">
+      <div class="logo">Man<span>diol</span></div>
+      <nav>
+        <button class="active" onclick="showSec('home')">Home</button>
+        <button onclick="showSec('offences')">Offences</button>
+        <button onclick="showSec('questionnaire')">Am I a Victim?</button>
+        <button onclick="showSec('evidence')">Evidence</button>
+        <button onclick="showSec('police')">Police Process</button>
+        <button onclick="showSec('court')">Court</button>
+        <button onclick="showSec('civil')">Civil Routes</button>
+        <button onclick="showSec('clares')">Clare's Law</button>
+        <button onclick="showSec('nonrecent')">Historic</button>
+        <button onclick="showSec('tracker')">Safety Tracker</button>
+        <button onclick="showSec('support')">Support</button>
+        <button onclick="showSec('videos')">Videos</button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- HOME -->
+  <div id="sec-home" class="section active">
+    <div class="hero">
+      <h1>You are <em>not alone</em>.<br>You have rights.</h1>
+      <p>Mandiol provides clear, plain-English guidance on Violence Against Women and Girls — from understanding offences to finding support.</p>
+      <div class="hero-btns">
+        <button class="btn-p" onclick="showSec('questionnaire')">Am I a victim?</button>
+        <button class="btn-o" onclick="showSec('offences')">Know the law</button>
+        <button class="btn-o" onclick="showSec('tracker')">🛡️ Safety tracker</button>
+      </div>
+    </div>
+    <main>
+      <div class="sbox">
+        <div class="sbox-icon">⚠️</div>
+        <div><h4>Your safety first</h4><p>If you are in immediate danger, call <strong>999</strong>. Use the <strong>red EXIT button</strong> (bottom right) at any time to leave this app instantly. For maximum privacy, use your phone's incognito browser.</p></div>
+      </div>
+      <h2 class="sec-title">What Mandiol covers</h2>
+      <p class="sec-sub">Tap any area to begin</p>
+      <div class="grid-2">
+        <div class="card" onclick="showSec('offences')"><h3>🔴 Sexual Offences</h3><p>Rape, sexual assault (s.2 & s.3), sexual harassment, voyeurism — plain English explanations and points to prove.</p><span class="tag">8 offences covered</span></div>
+        <div class="card" onclick="showSec('offences')"><h3>🟡 Coercive Control</h3><p>Recognising a toxic or abusive relationship. Signs, legal definition, and what to do.</p><span class="tag">Serious Crime Act 2015</span></div>
+        <div class="card" onclick="showSec('offences')"><h3>🟣 Online & Image Abuse</h3><p>Revenge porn, deepfakes, and voyeurism. Your rights and how to get images removed.</p><span class="tag">Online Safety Act 2023</span></div>
+        <div class="card" onclick="showSec('questionnaire')"><h3>❓ Am I a victim?</h3><p>A confidential questionnaire to help you understand if what's happening to you is a crime.</p><span class="tag">Completely private</span></div>
+        <div class="card" onclick="showSec('police')"><h3>👮 Police Process</h3><p>Telling vs reporting. The SARC. ABE video interview. Arrest vs voluntary interview. Your rights.</p><span class="tag">Step-by-step</span></div>
+        <div class="card" onclick="showSec('tracker')"><h3>📍 Safety Tracker</h3><p>Live location sharing with trusted contacts for safe walks, runs, or nights out.</p><span class="tag">Works offline</span></div>
+        <div class="card" onclick="showSec('clares')"><h3>📋 Clare's Law</h3><p>Right to ask police if your partner has a history of abuse. Sarah's Law and other disclosure schemes.</p><span class="tag">DVDS</span></div>
+        <div class="card" onclick="showSec('nonrecent')"><h3>⏰ It's Never Too Late</h3><p>Non-recent offences. How police investigate historic cases. Real case law examples.</p><span class="tag">No time limit</span></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- OFFENCES -->
+  <div id="sec-offences" class="section">
+    <main>
+      <div id="offences-list">
+        <h2 class="sec-title">Understanding the Offences</h2>
+        <p class="sec-sub">Select an offence to read a plain-English explanation, points to prove, and what to do.</p>
+        <div class="grid-2">
+          <div class="card" onclick="showOff('rape')"><h3>🔴 Rape</h3><p>Non-consensual penetration by a penis. Includes partners. Freeze response is not consent.</p><span class="tag">SOA 2003, s.1</span></div>
+          <div class="card" onclick="showOff('s2')"><h3>🔴 Sexual Assault by Penetration</h3><p>Penetration with body part (not penis) or object without consent. Same sentence as rape.</p><span class="tag">SOA 2003, s.2</span></div>
+          <div class="card" onclick="showOff('s3')"><h3>🔴 Sexual Assault</h3><p>Any intentional sexual touching without consent. Groping, grabbing, kissing against your will.</p><span class="tag">SOA 2003, s.3</span></div>
+          <div class="card" onclick="showOff('harassment')"><h3>🟠 Sexual Harassment</h3><p>Unwanted sexual behaviour in public, online, or at work. Now a criminal offence in the street.</p><span class="tag">Criminal Justice Act 2023</span></div>
+          <div class="card" onclick="showOff('voyeurism')"><h3>👁️ Voyeurism & Upskirting</h3><p>Secret observation or recording. Upskirting made illegal in 2019. Hidden cameras included.</p><span class="tag">Voyeurism Act 2019</span></div>
+          <div class="card" onclick="showOff('coercive')"><h3>🟡 Controlling & Coercive Behaviour</h3><p>A pattern of behaviour that traps, frightens or controls you. Does not require physical violence.</p><span class="tag">Serious Crime Act 2015</span></div>
+          <div class="card" onclick="showOff('revengeporn')"><h3>🟣 Revenge Porn</h3><p>Sharing or threatening to share intimate images without consent. Applies to all platforms.</p><span class="tag">Online Safety Act 2023</span></div>
+          <div class="card" onclick="showOff('deepfakes')"><h3>🟣 Intimate Deepfakes</h3><p>AI-generated fake intimate images of you. Creating and sharing are both now criminal offences.</p><span class="tag">Criminal Justice Bill 2024</span></div>
+        </div>
+      </div>
+
+      <!-- OFFENCE DETAIL PANELS -->
+      <div id="off-rape" class="offence-detail">
+        <button class="back-btn" onclick="showOffList()">← Back</button>
+        <div class="dc"><div class="dc-head"><h2>🔴 Rape</h2><p>Sexual Offences Act 2003, Section 1 — Maximum: Life imprisonment</p></div>
+        <div class="dc-body">
+          <div class="plain"><h4>🌿 In plain English</h4><p>Rape is when someone puts their penis into your vagina, anus, or mouth without your agreement. It doesn't matter if it's a stranger, a partner, or an ex. You don't have to have said "no" out loud — if you didn't freely agree, it's rape. <strong>Freezing</strong> is a recognised trauma response (fight, flight, or freeze). Freezing is NOT giving consent.</p></div>
+          <div class="pts"><h4>⚖️ Points to Prove</h4>
+            <div class="pi"><div class="pn">1</div><p>The suspect intentionally penetrated the victim's vagina, anus or mouth with their penis.</p></div>
+            <div class="pi"><div class="pn">2</div><p>The victim did not consent to the penetration.</p></div>
+            <div class="pi"><div class="pn">3</div><p>The suspect did not reasonably believe the victim consented.</p></div>
+          </div>
+          <div class="ib"><h4>Stranger Rape — Important</h4><p>A <strong>stranger rape</strong> is where the suspect is unknown to the victim or a very recent acquaintance. Police are more likely to arrest immediately in stranger rape because there is a risk to the wider public (the suspect may offend again). Forensic investigation is treated as urgent.</p></div>
+          <div class="ib"><h4>Consent</h4><p>A person consents if they agree by <strong>choice</strong> and have the <strong>freedom and capacity</strong> to make that choice. You cannot consent if asleep, unconscious, severely intoxicated, threatened, or under 16.</p></div>
+          <div class="ib"><h4>Common Myths</h4><ul><li><strong>"Freezing means I consented"</strong> — False. Freeze is a neurological trauma response.</li><li><strong>"My partner can't rape me"</strong> — Marital rape has been illegal since 1991 (R v R).</li><li><strong>"I was drunk so it's my fault"</strong> — Intoxication is the perpetrator's problem, not yours.</li><li><strong>"It's too late to report"</strong> — There is no time limit for rape in England & Wales.</li></ul></div>
+        </div></div>
+      </div>
+
+      <div id="off-s2" class="offence-detail">
+        <button class="back-btn" onclick="showOffList()">← Back</button>
+        <div class="dc"><div class="dc-head"><h2>🔴 Sexual Assault by Penetration</h2><p>Sexual Offences Act 2003, Section 2 — Maximum: Life imprisonment</p></div>
+        <div class="dc-body">
+          <div class="plain"><h4>🌿 In plain English</h4><p>This covers penetration of the vagina or anus with a body part other than a penis (such as fingers or tongue) or with an object, without your consent. It carries the same maximum sentence as rape and is treated with equal seriousness by police and courts.</p></div>
+          <div class="pts"><h4>⚖️ Points to Prove</h4>
+            <div class="pi"><div class="pn">1</div><p>The suspect intentionally penetrated the vagina or anus of the victim with a part of their body or anything else.</p></div>
+            <div class="pi"><div class="pn">2</div><p>The penetration was sexual in nature.</p></div>
+            <div class="pi"><div class="pn">3</div><p>The victim did not consent.</p></div>
+            <div class="pi"><div class="pn">4</div><p>The suspect did not reasonably believe the victim consented.</p></div>
+          </div>
+          <div class="ib"><h4>Examples</h4><ul><li>Penetration with fingers without consent</li><li>Penetration with an object without consent</li><li>Oral penetration not involving a penis</li></ul></div>
+        </div></div>
+      </div>
+
+      <div id="off-s3" class="offence-detail">
+        <button class="back-btn" onclick="showOffList()">← Back</button>
+        <div class="dc"><div class="dc-head"><h2>🔴 Sexual Assault</h2><p>Sexual Offences Act 2003, Section 3 — Maximum: 10 years imprisonment</p></div>
+        <div class="dc-body">
+          <div class="plain"><h4>🌿 In plain English</h4><p>Sexual assault is any intentional sexual touching without your consent. This includes groping, grabbing, unwanted kissing, rubbing against you in a crowd, touching over clothing, or forcing you to touch someone else. No penetration is needed. Any unwanted sexual touch counts.</p></div>
+          <div class="pts"><h4>⚖️ Points to Prove</h4>
+            <div class="pi"><div class="pn">1</div><p>The suspect intentionally touched the victim.</p></div>
+            <div class="pi"><div class="pn">2</div><p>The touching was sexual.</p></div>
+            <div class="pi"><div class="pn">3</div><p>The victim did not consent.</p></div>
+            <div class="pi"><div class="pn">4</div><p>The suspect did not reasonably believe the victim consented.</p></div>
+          </div>
+          <div class="ib"><h4>Examples</h4><ul><li>Groping on a night out or public transport</li><li>Unwanted kissing</li><li>Colleague touching your body at work without permission</li><li>Rubbing against you in a crowd for sexual gratification</li></ul></div>
+        </div></div>
+      </div>
+
+      <div id="off-harassment" class="offence-detail">
+        <button class="back-btn" onclick="showOffList()">← Back</button>
+        <div class="dc"><div class="dc-head"><h2>🟠 Sexual Harassment</h2><p>Criminal Justice Act 2023 (street) / Equality Act 2010 (workplace)</p></div>
+        <div class="dc-body">
+          <div class="plain"><h4>🌿 In plain English</h4><p>Sexual harassment is unwanted behaviour of a sexual nature that causes you distress. Since 2023, street sexual harassment is a criminal offence. At work, your employer has a legal duty to protect you. You don't have to have said "stop" — if it was unwanted and sexual, it qualifies.</p></div>
+          <div class="pts"><h4>⚖️ Points to Prove (Street)</h4>
+            <div class="pi"><div class="pn">1</div><p>The behaviour was unwanted by the victim.</p></div>
+            <div class="pi"><div class="pn">2</div><p>The behaviour was of a sexual nature.</p></div>
+            <div class="pi"><div class="pn">3</div><p>It occurred in a public place.</p></div>
+            <div class="pi"><div class="pn">4</div><p>The victim was alarmed, distressed or humiliated (or this was intended).</p></div>
+          </div>
+          <div class="ib"><h4>Examples</h4><ul><li>Catcalling, wolf-whistling, sexual comments in the street</li><li>Following while making sexual remarks</li><li>Sending unsolicited intimate images online</li><li>Unwanted touching or comments at work</li></ul></div>
+        </div></div>
+      </div>
+
+      <div id="off-voyeurism" class="offence-detail">
+        <button class="back-btn" onclick="showOffList()">← Back</button>
+        <div class="dc"><div class="dc-head"><h2>👁️ Voyeurism & Upskirting</h2><p>SOA 2003 s.67 / Voyeurism (Offences) Act 2019</p></div>
+        <div class="dc-body">
+          <div class="plain"><h4>🌿 In plain English</h4><p>Voyeurism is secretly watching or recording someone in a private situation. Upskirting (photographing under someone's clothing) became a specific criminal offence in 2019. Hidden cameras in bathrooms or bedrooms are also covered. You have a right to privacy — always.</p></div>
+          <div class="pts"><h4>⚖️ Points to Prove (Upskirting)</h4>
+            <div class="pi"><div class="pn">1</div><p>The suspect operated equipment beneath a person's clothing.</p></div>
+            <div class="pi"><div class="pn">2</div><p>Without that person's consent.</p></div>
+            <div class="pi"><div class="pn">3</div><p>To observe genitalia/buttocks, obtain sexual gratification, OR to humiliate/distress.</p></div>
+          </div>
+          <div class="ib"><h4>Found a hidden camera? Do this:</h4><ol style="padding-left:17px"><li style="font-size:13px;margin-bottom:4px">Do NOT touch it</li><li style="font-size:13px;margin-bottom:4px">Photograph it in place</li><li style="font-size:13px;margin-bottom:4px">Call police immediately (101 or 999)</li><li style="font-size:13px">Note exact location and time</li></ol></div>
+        </div></div>
+      </div>
+
+      <div id="off-coercive" class="offence-detail">
+        <button class="back-btn" onclick="showOffList()">← Back</button>
+        <div class="dc"><div class="dc-head"><h2>🟡 Controlling & Coercive Behaviour</h2><p>Serious Crime Act 2015, s.76 — Maximum: 5 years imprisonment</p></div>
+        <div class="dc-body">
+          <div class="plain"><h4>🌿 In plain English</h4><p>Coercive control is when a partner or ex uses a pattern of behaviour to trap, frighten, or control you. It doesn't require physical violence. Many women don't recognise it as a crime because it builds up gradually. If you feel like you're constantly "walking on eggshells" — that matters. It is a crime.</p></div>
+          <div class="pts"><h4>⚖️ Points to Prove</h4>
+            <div class="pi"><div class="pn">1</div><p>The suspect and victim are personally connected (intimate partner, ex, or family in shared home).</p></div>
+            <div class="pi"><div class="pn">2</div><p>The suspect engaged in repeated or continuous controlling or coercive behaviour.</p></div>
+            <div class="pi"><div class="pn">3</div><p>The behaviour had a serious effect: fear of violence, OR serious alarm/distress affecting daily life.</p></div>
+            <div class="pi"><div class="pn">4</div><p>The suspect knew or ought to have known the behaviour would have this effect.</p></div>
+          </div>
+          <div class="ib"><h4>Signs — Is This Happening to You?</h4><ul>
+            <li>Checking your phone or emails without permission</li>
+            <li>Controlling your money or stopping you from working</li>
+            <li>Isolating you from friends and family</li>
+            <li>Constantly criticising or humiliating you</li>
+            <li>Monitoring your location</li>
+            <li>Making you feel like you're "going mad" (gaslighting)</li>
+            <li>Using children as a weapon</li>
+            <li>Threatening to share your private photos or information</li>
+          </ul></div>
+        </div></div>
+      </div>
+
+      <div id="off-revengeporn" class="offence-detail">
+        <button class="back-btn" onclick="showOffList()">← Back</button>
+        <div class="dc"><div class="dc-head"><h2>🟣 Revenge Porn</h2><p>Online Safety Act 2023 — Maximum: 2 years imprisonment</p></div>
+        <div class="dc-body">
+          <div class="plain"><h4>🌿 In plain English</h4><p>Sharing or threatening to share intimate images of you without your consent is a criminal offence. It doesn't matter if you originally took the photo yourself or shared it with a partner. Even threatening to share is now illegal under the 2023 Act. Act fast — evidence and image removal are time-sensitive.</p></div>
+          <div class="pts"><h4>⚖️ Points to Prove</h4>
+            <div class="pi"><div class="pn">1</div><p>A photograph or film was shared (or threatened to be shared).</p></div>
+            <div class="pi"><div class="pn">2</div><p>It showed private sexual activity or genitalia.</p></div>
+            <div class="pi"><div class="pn">3</div><p>The victim did not consent to the sharing.</p></div>
+            <div class="pi"><div class="pn">4</div><p>Intent to cause distress (or recklessness as to causing it).</p></div>
+          </div>
+          <div class="ib"><h4>Do This Immediately</h4><ul>
+            <li>Screenshot the post, the URL, the account — preserve everything</li>
+            <li>Call Revenge Porn Helpline: <strong>0345 6000 459</strong></li>
+            <li>Visit <strong>StopNCII.org</strong> to create a digital fingerprint</li>
+            <li>Report to police</li>
+            <li>Report directly to the platform</li>
+          </ul></div>
+        </div></div>
+      </div>
+
+      <div id="off-deepfakes" class="offence-detail">
+        <button class="back-btn" onclick="showOffList()">← Back</button>
+        <div class="dc"><div class="dc-head"><h2>🟣 Intimate Deepfakes</h2><p>Online Safety Act 2023 / Criminal Justice Bill 2024</p></div>
+        <div class="dc-body">
+          <div class="plain"><h4>🌿 In plain English</h4><p>A deepfake uses AI to put your face onto another body, often in sexual situations. This can be done using ordinary photos from your social media — you don't have to have posed for anything. Sharing intimate deepfakes without consent is already illegal. The 2024 Bill will also criminalise creating them, even if never shared.</p></div>
+          <div class="pts"><h4>⚖️ Points to Prove (Sharing)</h4>
+            <div class="pi"><div class="pn">1</div><p>A deepfake intimate image of the victim was shared.</p></div>
+            <div class="pi"><div class="pn">2</div><p>The victim did not consent.</p></div>
+            <div class="pi"><div class="pn">3</div><p>No reasonable belief that the victim consented.</p></div>
+          </div>
+          <div class="ib"><h4>What to Do</h4><ul>
+            <li>Screenshot all evidence before reporting (it may be deleted)</li>
+            <li>Report to police with all evidence</li>
+            <li>Contact Revenge Porn Helpline — they handle deepfakes too</li>
+            <li>Contact a solicitor for an emergency injunction</li>
+          </ul></div>
+        </div></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- QUESTIONNAIRE -->
+  <div id="sec-questionnaire" class="section">
+    <main>
+      <h2 class="sec-title">Am I experiencing abuse?</h2>
+      <p class="sec-sub">Confidential — nothing is saved or sent anywhere. Exit any time.</p>
+      <div class="sbox"><div class="sbox-icon">🔒</div><div><h4>Private & confidential</h4><p>Your answers are not stored, sent, or shared. Use the EXIT button if needed.</p></div></div>
+      <div class="qcard"><div id="q-container"></div></div>
+    </main>
+  </div>
+
+  <!-- EVIDENCE -->
+  <div id="sec-evidence" class="section">
+    <main>
+      <h2 class="sec-title">Securing Your Evidence</h2>
+      <p class="sec-sub">Good evidence can make a crucial difference. Here's what to preserve and how.</p>
+      <div class="sbox"><div class="sbox-icon">⚠️</div><div><h4>Do not delete anything</h4><p>Never delete messages, photos, or emails — even distressing ones. Altering evidence can damage a case. Preserve first, seek support second.</p></div></div>
+
+      <div class="evcat"><div class="evcat-h" onclick="toggleEv(this)"><h3>📱 Digital & Phone Evidence</h3><span>▾</span></div>
+      <div class="evcat-b" style="display:block">
+        <div class="evtip"><div class="evtip-icon">💬</div><div><h4>Text messages & WhatsApp</h4><p>Screenshot full conversations including the contact name/number. On WhatsApp: tap ⋮ > More > Export Chat. Back up to secure cloud (not just your phone).</p></div></div>
+        <div class="evtip"><div class="evtip-icon">📧</div><div><h4>Emails</h4><p>Forward threatening emails to a secure account. Screenshot showing sender address and full date clearly.</p></div></div>
+        <div class="evtip"><div class="evtip-icon">📱</div><div><h4>Social media</h4><p>Screenshot profile URL + abusive post + comments. Download content from the platform before reporting — posts may be deleted after reporting.</p></div></div>
+        <div class="evtip"><div class="evtip-icon">🎙️</div><div><h4>Voicemails</h4><p>Do NOT delete threatening voicemails. Write down date, time and content. Police can retrieve deleted voicemails in some cases.</p></div></div>
+        <div class="evtip"><div class="evtip-icon">📍</div><div><h4>Tracking apps / stalkerware</h4><p>If you think your phone is monitored, do NOT search for this on your device. Use a trusted friend's phone. Call the DA Helpline before changing any settings — they can advise safely.</p></div></div>
+        <div class="evtip"><div class="evtip-icon">📹</div><div><h4>CCTV footage</h4><p>CCTV is typically overwritten within 28–31 days. If an incident happened in public, report to police quickly so footage can be urgently requested.</p></div></div>
+      </div></div>
+
+      <div class="evcat"><div class="evcat-h" onclick="toggleEv(this)"><h3>🩹 Physical Evidence</h3><span>▾</span></div>
+      <div class="evcat-b" style="display:block">
+        <div class="evtip"><div class="evtip-icon">🏥</div><div><h4>Forensic medical (SARC)</h4><p>For sexual offences, attend a SARC as soon as possible. Ideally within 72 hours. Do not wash, shower, or change clothes beforehand if you can help it. A SARC can preserve forensic evidence even if you're not ready to report to police.</p></div></div>
+        <div class="evtip"><div class="evtip-icon">📸</div><div><h4>Injuries</h4><p>Photograph injuries with a ruler or coin for scale. Date and time-stamp photos. Visit GP or A&E so injuries are documented in medical notes.</p></div></div>
+        <div class="evtip"><div class="evtip-icon">🧥</div><div><h4>Clothing</h4><p>Do not wash clothing worn during an assault. Place in a paper bag (NOT plastic). Store somewhere safe outside the home if possible.</p></div></div>
+        <div class="evtip"><div class="evtip-icon">📓</div><div><h4>Keep a diary</h4><p>For ongoing offences (coercive control, harassment), write dates, times, what happened, what was said. Date and sign each entry. This has real evidential value.</p></div></div>
+      </div></div>
+
+      <div class="evcat"><div class="evcat-h" onclick="toggleEv(this)"><h3>⏱️ Forensic Windows</h3><span>▾</span></div>
+      <div class="evcat-b" style="display:block">
+        <div class="evtip"><div class="evtip-icon">🔬</div><div><h4>Rape (vaginal)</h4><p>Up to 7 days — but ideally within 72 hours for best evidence. DNA degrades quickly.</p></div></div>
+        <div class="evtip"><div class="evtip-icon">🔬</div><div><h4>Rape (anal or oral)</h4><p>2–3 days for anal, up to 48 hours for oral penetration. Shorter forensic windows.</p></div></div>
+        <div class="evtip"><div class="evtip-icon">🔬</div><div><h4>Sexual assault (skin contact)</h4><p>Up to 48 hours. Touch DNA (from fingers/hands on skin) is possible but degrades quickly.</p></div></div>
+        <div class="evtip"><div class="evtip-icon">🔬</div><div><h4>Drug/alcohol facilitation</h4><p>Urine within 72–96 hours. Hair testing for GHB/ketamine etc. can go back up to 3 months.</p></div></div>
+        <div class="evtip"><div class="evtip-icon">💡</div><div><h4>Even outside the window</h4><p>Always attend. Your account, injuries, and emotional state can still be documented. It is NEVER too late to speak to a SARC.</p></div></div>
+      </div></div>
+    </main>
+  </div>
+
+  <!-- POLICE PROCESS -->
+  <div id="sec-police" class="section">
+    <main>
+      <h2 class="sec-title">The Police Investigation Process</h2>
+      <p class="sec-sub">Understanding your options — step by step.</p>
+      <div class="sub-tabs">
+        <button class="stab active" onclick="showStab('reporting')">Reporting Options</button>
+        <button class="stab" onclick="showStab('telling')">Telling Not Reporting</button>
+        <button class="stab" onclick="showStab('sarc')">The SARC</button>
+        <button class="stab" onclick="showStab('statement')">Your Statement</button>
+        <button class="stab" onclick="showStab('suspect')">The Suspect</button>
+        <button class="stab" onclick="showStab('disposals')">Disposals</button>
+      </div>
+
+      <div id="stab-reporting" class="spanel active">
+        <div class="timeline">
+          <div class="tstep"><div class="tdot"><span>1</span></div><h3>999 — Emergency</h3><p>Call 999 if you are in immediate danger, the offender is nearby, or there is ongoing risk to you or anyone else.</p></div>
+          <div class="tstep"><div class="tdot"><span>2</span></div><h3>101 — Non-Emergency</h3><p>To report a crime that has already happened with no immediate danger. Also available: online reporting via your local force's website.</p></div>
+          <div class="tstep"><div class="tdot"><span>3</span></div><h3>In person at a police station</h3><p>You can attend any police station — it does not have to be nearest to where it happened. Ask for a same-sex officer — you are entitled to make this request.</p></div>
+          <div class="tstep"><div class="tdot"><span>4</span></div><h3>Via a SARC or ISVA</h3><p>A Sexual Assault Referral Centre or Independent Sexual Violence Adviser can help you make a report, or report alongside you, if you prefer not to go alone.</p></div>
+        </div>
+      </div>
+
+      <div id="stab-telling" class="spanel">
+        <div class="pts" style="margin-bottom:20px"><h4>⭐ "Telling, Not Reporting" — You Are In Control</h4>
+          <p style="font-size:14px;margin-bottom:10px">You can give information to police <strong>without making a formal report</strong> and without triggering an arrest.</p>
+          <div class="pi"><div class="pn">✓</div><p>Your account goes on record.</p></div>
+          <div class="pi"><div class="pn">✓</div><p>Helps police identify if this person has offended before.</p></div>
+          <div class="pi"><div class="pn">✓</div><p>Can be used as "bad character" evidence in future prosecutions.</p></div>
+          <div class="pi"><div class="pn">✓</div><p><strong>Police will NOT arrest without your knowledge and consent.</strong></p></div>
+          <div class="pi"><div class="pn">✓</div><p>You remain in control. You can move to a formal report at any time.</p></div>
+        </div>
+        <p style="font-size:14px;color:var(--mid-grey)">Many offenders are repeat offenders. Each report — even without a formal complaint — builds a picture. You may be the fifth person to report the same individual.</p>
+      </div>
+
+      <div id="stab-sarc" class="spanel">
+        <div class="plain" style="margin-bottom:20px"><h4>💚 Self-Referral — No Police Required</h4><p>You can attend a SARC without any police involvement at all. Your samples are stored securely. No report is made to police unless you want one. If you later decide to report, your preserved evidence is available.</p></div>
+        <div class="timeline">
+          <div class="tstep"><div class="tdot"><span>1</span></div><h3>Arrive at the SARC</h3><p>With or without police. Met by a trained sexual offences nurse examiner (SONE). You are in a comfortable, private facility — not a police station.</p></div>
+          <div class="tstep"><div class="tdot"><span>2</span></div><h3>Initial conversation</h3><p>A general account of what happened. Detailed evidence gathering happens at your ABE interview later. Who is present: the nurse/examiner, an ISVA if available, a supporter of your choice.</p></div>
+          <div class="tstep"><div class="tdot"><span>3</span></div><h3>Forensic medical examination (your choice)</h3><p>You can decline any part. Samples may include: vaginal/anal/oral swabs, fingernail scrapings, hair combings, clothing, blood (toxicology), urine. You can request a female examiner.</p></div>
+          <div class="tstep"><div class="tdot"><span>4</span></div><h3>Healthcare</h3><p>Emergency contraception, STI testing, HIV PEP (post-exposure prophylaxis) if needed. All offered as part of SARC care.</p></div>
+          <div class="tstep"><div class="tdot"><span>5</span></div><h3>Referral to ISVA</h3><p>An Independent Sexual Violence Adviser provides free, ongoing support however you proceed — whether you report or not.</p></div>
+        </div>
+        <div class="tnote">To find your nearest SARC: <strong>nhs.uk/live-well/sexual-health/help-after-rape</strong> or call Rape Crisis on 0808 802 9999.</div>
+      </div>
+
+      <div id="stab-statement" class="spanel">
+        <div class="timeline">
+          <div class="tstep"><div class="tdot"><span>1</span></div><h3>Written Statement (MG11)</h3><p>Formal written account taken by an officer. You can take breaks, have an ISVA present, and read it before signing. You can request a copy at any time.</p></div>
+          <div class="tstep"><div class="tdot"><span>2</span></div><h3>ABE Video Interview — Achieving Best Evidence</h3><p>For sexual offences, police offer a video-recorded interview instead of a written statement.</p>
+            <div class="tnote"><strong>The room:</strong> A comfortable civilian room with sofas — not an interview suite. Private and sound-insulated.<br><br><strong>Who is present:</strong><br>• A trained detective (sexual offence specialist)<br>• Sometimes an <strong>intermediary</strong> — a registered communication specialist (used if you have communication needs, autism, learning difficulties, or severe trauma response)<br>• Your <strong>ISVA</strong> can be present (to support, not to speak during interview)<br>• A trusted friend, family member, or appropriate adult may attend — ask your officer</div>
+          </div>
+          <div class="tstep"><div class="tdot"><span>3</span></div><h3>The interview process</h3><p>1. Officer explains format. 2. You tell what happened in your own words (free narrative). 3. Officer asks open, clarifying questions. 4. You can ask for a break at any point. 5. Everything is recorded (audio and video).</p></div>
+          <div class="tstep"><div class="tdot"><span>4</span></div><h3>Why the ABE matters</h3><p>The recording is played as your <strong>evidence-in-chief</strong> at trial. You do not stand up in open court and re-tell everything. You will still be cross-examined — but via video link with special measures.</p></div>
+        </div>
+      </div>
+
+      <div id="stab-suspect" class="spanel">
+        <div class="timeline">
+          <div class="tstep"><div class="tdot"><span>1</span></div><h3>Voluntary Interview</h3><p>Police may invite the suspect to attend voluntarily. They can bring a solicitor. They are not obliged to attend — police may then arrest. The caution still applies and the interview is still recorded.</p></div>
+          <div class="tstep"><div class="tdot"><span>2</span></div><h3>Arrest</h3><p>Police arrest if they have <strong>reasonable grounds</strong> to suspect the offence and arrest is necessary. In stranger rape cases, police are more likely to arrest immediately due to ongoing public risk. After arrest: suspect is taken to custody, detained up to 24 hours (extendable), entitled to free legal advice.</p></div>
+          <div class="tstep"><div class="tdot"><span>3</span></div><h3>Intimate samples from the suspect</h3><p>If the suspect is arrested <strong>within 72 hours</strong> of the offence, police can take intimate samples from them (mouth swabs, genital swabs, fingernail scrapings). This is why swift reporting and the forensic window matter so much.</p></div>
+          <div class="tstep"><div class="tdot"><span>4</span></div><h3>CPS charging decision</h3><p>Police pass the file to the Crown Prosecution Service. CPS apply: (1) sufficient evidence for a realistic prospect of conviction, (2) prosecution in the public interest. You will be told the outcome with reasons.</p>
+          <div class="tnote">If CPS decide not to charge, request a review under the <strong>Victims' Right to Review</strong> scheme.</div></div>
+        </div>
+      </div>
+
+      <div id="stab-disposals" class="spanel">
+        <div class="grid-2">
+          <div class="civcard">
+            <span class="civtag">Bail With Conditions</span>
+            <h3>Released — with restrictions</h3>
+            <p>Suspect released with a date to return. Conditions may include: no contact with you (direct or indirect), exclusion from specified areas (near your home/work), surrender of passport, regular reporting to police station.</p>
+            <p><strong>Tell your officer what conditions YOU need.</strong> You have the right to provide input. Breach of bail conditions is a criminal offence.</p>
+          </div>
+          <div class="civcard">
+            <span class="civtag">Bail Without Conditions</span>
+            <h3>Released — no restrictions</h3>
+            <p>Suspect released with a return date but no conditions. Less common in VAWG cases. If you are concerned about risk, raise this with your officer and ISVA — bail conditions can be applied later.</p>
+          </div>
+          <div class="civcard">
+            <span class="civtag">Released Under Investigation (RUI)</span>
+            <h3>No date set — investigation continues</h3>
+            <p>No bail date, no conditions. The suspect is free while investigation continues. This can feel unsettling. You can ask police about their timeline and what conditions might be available. Your ISVA can advocate for you.</p>
+          </div>
+          <div class="civcard">
+            <span class="civtag">Remanded Into Custody</span>
+            <h3>Kept in prison until court</h3>
+            <p>Applied where there is: flight risk, risk of reoffending, prior breaches of bail, or a serious offence with strong evidence. Granted by a court, not police. You can ask to be notified if they are released.</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- COURT -->
+  <div id="sec-court" class="section">
+    <main>
+      <h2 class="sec-title">The Court Process</h2>
+      <p class="sec-sub">What happens if the case goes to trial — and what you're entitled to.</p>
+
+      <div class="conv-box">
+        <div class="conv-num">68%</div>
+        <h3>Conviction rate for rape cases that reach Crown Court trial</h3>
+        <p>CPS data 2023/24. If your case reaches trial, it is more likely to result in conviction than not. Reporting matters.</p>
+      </div>
+
+      <div class="sbox"><div class="sbox-icon">💜</div><div><h4>If you don't report, they will do it again</h4><p>Research consistently shows that VAWG offenders are repeat offenders. Every report — even "telling not reporting" — protects other women. Your voice matters. You will be believed. You are not alone in this.</p></div></div>
+
+      <div class="timeline">
+        <div class="tstep"><div class="tdot"><span>1</span></div><h3>Plea Hearing</h3><p>Serious offences (rape, sexual assault) go to Crown Court. The suspect enters a plea — guilty or not guilty.</p></div>
+        <div class="tstep"><div class="tdot"><span>2</span></div><h3>Trial (if not guilty plea)</h3><p>A jury of 12 members of the public hears the evidence. Your ABE video interview is played — you do not re-tell everything in open court. A prosecution barrister asks follow-up questions. The defence barrister cross-examines you.</p></div>
+        <div class="tstep"><div class="tdot"><span>3</span></div><h3>Special Measures — Your Entitlement</h3>
+          <div class="tnote">
+            <strong>As a victim of a sexual or violent crime, you are automatically entitled to ask for:</strong><br><br>
+            🛡️ <strong>Screen in courtroom</strong> — hidden from the defendant<br>
+            📺 <strong>Video link</strong> — give evidence from a separate room<br>
+            👤 <strong>Supporter present</strong> while you give evidence<br>
+            🚪 <strong>Public excluded</strong> from court (reporting restrictions)<br>
+            🎥 <strong>Section 28 — pre-recorded cross-examination</strong> (available in all Crown Courts from 2022): your cross-examination is recorded before trial — you don't have to attend on the trial day at all
+          </div>
+        </div>
+        <div class="tstep"><div class="tdot"><span>4</span></div><h3>Cross-Examination Protections</h3><p>The defence cannot ask about your sexual history without leave of the court (Youth Justice and Criminal Evidence Act 1999, s.41). The judge decides whether such questions are genuinely relevant — they exist to test evidence, not to shame you.</p></div>
+        <div class="tstep"><div class="tdot"><span>5</span></div><h3>Victim Personal Statement (VPS)</h3><p>You can write a statement describing the impact of the crime on your life. It is read to the court at sentencing. You can read it yourself, have the prosecutor read it, or submit it in writing. The judge must consider it. <strong>Your voice matters here too.</strong></p></div>
+        <div class="tstep"><div class="tdot"><span>6</span></div><h3>Verdict & Sentencing</h3><p>The jury delivers a verdict. If guilty, the judge passes sentence. If you are unhappy with the sentence, you can ask the Solicitor General to refer it to the Court of Appeal if it appears unduly lenient (Unduly Lenient Sentence scheme — 28 days from sentencing).</p></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- CIVIL ROUTES -->
+  <div id="sec-civil" class="section">
+    <main>
+      <h2 class="sec-title">Civil Protection Routes</h2>
+      <p class="sec-sub">You don't have to wait for a criminal prosecution. Civil law can protect you — sometimes within 24 hours.</p>
+      <div class="civcard"><span class="civtag">Family Law Act 1996</span><h3>Non-Molestation Order</h3><p>Forbids the abuser from using or threatening violence, harassing, pestering, or contacting you by any means.</p><p><strong>How fast:</strong> Emergency order within 24 hours (ex parte — without the abuser present).</p><p><strong>Who can apply:</strong> Current/former partner, family member, someone you have a child with.</p><p><strong>Legal Aid:</strong> Available with evidence of domestic abuse. Many solicitors offer free initial consultation.</p><p><strong>Breach:</strong> Criminal offence — up to 5 years imprisonment. Call 999 immediately.</p></div>
+      <div class="civcard"><span class="civtag">Family Law Act 1996</span><h3>Occupation Order</h3><p>Removes the abuser from the home — even if it's in their name. Can exclude them from the surrounding area.</p><p><strong>How fast:</strong> Emergency order within 24–48 hours. Duration: initially 6–12 months, extendable.</p></div>
+      <div class="civcard"><span class="civtag">Crime & Security Act 2010</span><h3>Domestic Violence Protection Order (DVPO)</h3><p>Police apply for this — no involvement required from you. Removes the abuser from your home for up to 28 days. Gives you breathing space to make decisions.</p><p><strong>How fast:</strong> Applied for by police within 48 hours of an incident.</p></div>
+      <div class="civcard"><span class="civtag">Protection from Harassment Act 1997</span><h3>Civil Injunction</h3><p>If harassed on two or more occasions, you can apply for a civil injunction without a criminal conviction. Also: a criminal court can impose a Restraining Order on conviction — or even on acquittal.</p></div>
+      <div class="civcard"><span class="civtag">CICA Scheme</span><h3>Criminal Injuries Compensation</h3><p>Financial compensation for victims of violent crime — regardless of whether there was a prosecution. Apply at <strong>gov.uk/claim-compensation-criminal-injury</strong></p><p><strong>Time limit:</strong> Generally 2 years from the offence. Exceptions for historic cases. Ranges from £1,000 to over £500,000.</p></div>
+      <div class="civcard"><span class="civtag">Online Safety Act 2023</span><h3>Emergency Image Removal Injunction</h3><p>A solicitor can apply for an emergency injunction requiring a platform to remove intimate images or deepfakes immediately. Can be done within hours in urgent cases.</p></div>
+    </main>
+  </div>
+
+  <!-- CLARES LAW -->
+  <div id="sec-clares" class="section">
+    <main>
+      <h2 class="sec-title">Clare's Law & Disclosure Schemes</h2>
+      <p class="sec-sub">Your right to know if a partner has a history of violence or abuse.</p>
+      <div class="clares-card">
+        <span class="clares-tag">Domestic Violence Disclosure Scheme — 2014</span>
+        <h3>Clare's Law — Right to Ask</h3>
+        <p>In 2009, Clare Wood was murdered by her partner George Appleton, who had a known history of violence against women. Her father campaigned for a law to give women the right to ask police about a partner's history. Clare's Law was introduced nationally in England & Wales in 2014.</p>
+        <p><strong>Right to Ask:</strong> You can ask your local police whether a current partner has a history of domestic abuse or violence. Police investigate and, if there is relevant information and you are assessed to be at risk, they will tell you.</p>
+        <p><strong>Right to Know:</strong> Police can also proactively tell you — without you asking — if they believe you are at risk from a partner.</p>
+        <p><strong>How to apply:</strong> Contact your local police station or call 101. Ask to make a DVDS (Domestic Violence Disclosure Scheme) enquiry. Usually processed within 35 days.</p>
+        <p><strong>Available in:</strong> England & Wales (2014), Scotland (2015), Northern Ireland (2022).</p>
+      </div>
+      <div class="clares-card">
+        <span class="clares-tag">Child Sex Offender Disclosure Scheme</span>
+        <h3>Sarah's Law — Right to Ask About Children</h3>
+        <p>Allows parents, carers or guardians to ask police whether a person who has contact with their child has been convicted of child sexual offences. Contact your local police to make an enquiry.</p>
+      </div>
+      <div class="clares-card">
+        <span class="clares-tag">Disclosure Schemes</span>
+        <h3>Stalking Protection Orders</h3>
+        <p>Since 2020, police can apply for a Stalking Protection Order (SPO) as a civil measure to protect victims of stalking before a criminal prosecution. It can prohibit specific behaviour and require the stalker to attend an intervention programme. Contact the <strong>Suzy Lamplugh Trust National Stalking Helpline: 0808 802 0300</strong>.</p>
+      </div>
+    </main>
+  </div>
+
+  <!-- NON-RECENT -->
+  <div id="sec-nonrecent" class="section">
+    <main>
+      <h2 class="sec-title">It Is Never Too Late</h2>
+      <p class="sec-sub">There is no time limit for reporting rape or serious sexual offences in England & Wales.</p>
+      <div class="plain" style="margin-bottom:24px"><h4>💚 The Law</h4><p>Unlike most criminal offences, there is no statutory limitation period for rape and serious sexual offences in England & Wales. You can report an offence that happened 5, 10, 30 or 40 years ago. Historic reports are taken seriously by police, prosecutors, and courts.</p></div>
+      <div class="sbox"><div class="sbox-icon">💜</div><div><h4>Why people don't report at the time — and why that's completely understandable</h4><p>Shock, shame, fear, not recognising it as a crime, cultural pressure, being very young, alcohol involved, trust in the abuser. None of these mean you cannot report now. Delay is well understood by police and courts.</p></div></div>
+
+      <h3 class="sec-title" style="font-size:1.4rem;margin-top:28px">Real Case Law Examples</h3>
+      <p class="sec-sub">Historic prosecutions that resulted in justice</p>
+      <div class="caselaw-card"><span class="caselaw-tag">2013</span><h3>Stuart Hall</h3><p>TV presenter convicted of 14 indecent assaults on girls from 1967–1985. Many victims came forward decades later. Sentenced to 30 months. His case encouraged many others to come forward and was a landmark moment for historic sexual offence prosecution.</p></div>
+      <div class="caselaw-card"><span class="caselaw-tag">2014</span><h3>Rolf Harris</h3><p>Convicted of 12 indecent assaults between 1968 and 1986. Victims had not reported at the time. Sentenced to 5 years 9 months. Court of Appeal dismissed appeals. Case showed that a high-profile perpetrator with no prior record can still be convicted on historic complaints.</p></div>
+      <div class="caselaw-card"><span class="caselaw-tag">Ongoing</span><h3>Operation Hydrant</h3><p>National police coordination of historic non-recent child sexual abuse investigations. As of 2023, has investigated thousands of suspects including public figures. Demonstrates police capacity and commitment to historic cases at scale.</p></div>
+      <div class="caselaw-card"><span class="caselaw-tag">Key Case Law</span><h3>R v Barker [2010] EWCA Crim 4</h3><p>Court of Appeal affirmed that delay in reporting does not automatically undermine a complainant's reliability. Jury directions are given to this effect in all Crown Court sexual offence trials.</p></div>
+      <div class="caselaw-card"><span class="caselaw-tag">Important Principle</span><h3>The Power of Multiple Complainants</h3><p>When one person reports, police may find other victims. The pattern of behaviour becomes the prosecution's strongest evidence. In Hall and Harris cases, the first report triggered others — and justice followed. Your report may be the one that makes the difference.</p></div>
+
+      <div class="pts" style="margin-top:28px"><h4>💜 The message to you</h4>
+        <div class="pi"><div class="pn">✓</div><p>You are not too late.</p></div>
+        <div class="pi"><div class="pn">✓</div><p>Your memory is valid — even if incomplete. Trauma affects memory. That is neuroscience, not dishonesty.</p></div>
+        <div class="pi"><div class="pn">✓</div><p>Someone will believe you.</p></div>
+        <div class="pi"><div class="pn">✓</div><p>Reporting may protect others — your abuser may be doing this now.</p></div>
+        <div class="pi"><div class="pn">✓</div><p>You deserve acknowledgment, whether or not a conviction follows.</p></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- SAFETY TRACKER -->
+  <div id="sec-tracker" class="section">
+    <main>
+      <h2 class="sec-title">Safety Tracker</h2>
+      <p class="sec-sub">Share your location with trusted contacts during walks, runs, or any time you want extra safety.</p>
+      <div class="tracker-main">
+        <div class="tracker-status">
+          <div class="tracker-dot" id="tracker-dot"></div>
+          <h3 id="tracker-status-text">Tracker is off</h3>
+          <p id="tracker-status-sub">Activate to start sharing your location</p>
+        </div>
+        <label class="tlabel">Trusted contact name</label>
+        <input class="tfield" id="t-name" type="text" placeholder="e.g. Mum, Sarah, Emma">
+        <label class="tlabel">Trusted contact phone</label>
+        <input class="tfield" id="t-phone" type="tel" placeholder="e.g. 07700 900000">
+        <label class="tlabel">Check-in every</label>
+        <select class="tfield" id="t-interval">
+          <option value="10">10 minutes</option>
+          <option value="15">15 minutes</option>
+          <option value="20">20 minutes</option>
+          <option value="30">30 minutes</option>
+        </select>
+        <label class="tlabel">SOS message (pre-written)</label>
+        <input class="tfield" id="t-sos" type="text" value="I need help. My last location was: [LOCATION]. Please call 999.">
+        <button class="tracker-btn start" id="tracker-start-btn" onclick="startTracker()">🛡️ Start Safety Tracker</button>
+        <button class="tracker-btn stop" id="tracker-stop-btn" style="display:none" onclick="stopTracker()">✓ I'm Safe — Stop Tracker</button>
+        <button class="tracker-btn sos" onclick="sendSOS()">🆘 SEND SOS NOW</button>
+        <div class="tnote" style="margin-top:16px">
+          <strong>How it works:</strong> When active, your location is shared with your trusted contact at the interval you set. If you don't check in within 2 minutes of a prompt, a warning is sent. After 5 minutes without response, the SOS message is sent with your last known location. Press "I'm Safe" to stop at any time.<br><br>
+          <strong>Works offline:</strong> SOS uses SMS so works without internet. Location sharing requires internet or GPS.
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- SUPPORT -->
+  <div id="sec-support" class="section">
+    <main>
+      <h2 class="sec-title">Support Agencies</h2>
+      <p class="sec-sub">All services below are confidential and free.</p>
+      <div class="sfilt">
+        <button class="filt active" onclick="filtSupport('all',this)">All</button>
+        <button class="filt" onclick="filtSupport('sexual',this)">Sexual Violence</button>
+        <button class="filt" onclick="filtSupport('domestic',this)">Domestic Abuse</button>
+        <button class="filt" onclick="filtSupport('online',this)">Online Abuse</button>
+        <button class="filt" onclick="filtSupport('legal',this)">Legal Help</button>
+        <button class="filt" onclick="filtSupport('lgbt',this)">LGBT+</button>
+      </div>
+      <div class="sgrid" id="sgrid">
+        <div class="scard" data-tags="sexual domestic"><div class="scard-top"><div class="sicon">🏥</div><div><h3>Rape Crisis England & Wales</h3><div class="stype">National — ISVA & Counselling</div></div></div><div class="stags"><span class="stag">Sexual Violence</span><span class="stag">ISVA</span><span class="stag">24/7</span></div><p>Specialist support for women and girls who have experienced sexual violence at any time in their life. ISVAs support you through the criminal justice process.</p><a href="https://rapecrisis.org.uk" target="_blank">rapecrisis.org.uk</a> | <a href="tel:08088029999">0808 802 9999</a></div>
+
+        <div class="scard" data-tags="sexual"><div class="scard-top"><div class="sicon">🌸</div><div><h3>SARSAS</h3><div class="stype">Regional SARC — Somerset & Avon</div></div></div><div class="stags"><span class="stag">Sexual Violence</span><span class="stag">SARC</span></div><p>Free specialist counselling and ISVA support for those affected by rape and sexual abuse in Somerset and Avon. Find your regional SARC via NHS.</p><a href="https://www.sarsas.org.uk" target="_blank">sarsas.org.uk</a> | <a href="tel:08088010456">0808 801 0456</a></div>
+
+        <div class="scard" data-tags="domestic"><div class="scard-top"><div class="sicon">🏠</div><div><h3>National DA Helpline</h3><div class="stype">Refuge — 24/7 Freephone</div></div></div><div class="stags"><span class="stag">Domestic Abuse</span><span class="stag">Refuge Referral</span><span class="stag">24/7</span></div><p>Free 24/7 helpline run by Refuge. Help finding local refuges, safety planning, and specialist support for women experiencing domestic abuse.</p><a href="https://www.nationaldahelpline.org.uk" target="_blank">nationaldahelpline.org.uk</a> | <a href="tel:08082000247">0808 2000 247</a></div>
+
+        <div class="scard" data-tags="domestic"><div class="scard-top"><div class="sicon">💜</div><div><h3>Women's Aid</h3><div class="stype">National Charity</div></div></div><div class="stags"><span class="stag">Domestic Abuse</span><span class="stag">Coercive Control</span></div><p>Live chat, online community, and local service finder. Survivors' Handbook available online. Especially strong for coercive control support.</p><a href="https://www.womensaid.org.uk" target="_blank">womensaid.org.uk</a></div>
+
+        <div class="scard" data-tags="online"><div class="scard-top"><div class="sicon">📱</div><div><h3>Revenge Porn Helpline</h3><div class="stype">Specialist — Image Removal</div></div></div><div class="stags"><span class="stag">Online Abuse</span><span class="stag">Image Removal</span><span class="stag">Deepfakes</span></div><p>Removes intimate images from platforms. Handles deepfakes. Works directly with major sites for fast removal. Free and confidential.</p><a href="https://revengepornhelpline.org.uk" target="_blank">revengepornhelpline.org.uk</a> | <a href="tel:03456000459">0345 6000 459</a></div>
+
+        <div class="scard" data-tags="online"><div class="scard-top"><div class="sicon">🌐</div><div><h3>StopNCII.org</h3><div class="stype">Online Tool — Prevention</div></div></div><div class="stags"><span class="stag">Online Abuse</span><span class="stag">Prevention</span></div><p>Creates a digital fingerprint of your intimate image to block it being uploaded to major platforms — even if offline now. Free and confidential.</p><a href="https://www.stopncii.org" target="_blank">stopncii.org</a></div>
+
+        <div class="scard" data-tags="sexual domestic"><div class="scard-top"><div class="sicon">🌺</div><div><h3>Victim Support</h3><div class="stype">National — Court Support</div></div></div><div class="stags"><span class="stag">All Offences</span><span class="stag">Court Support</span><span class="stag">24/7</span></div><p>Free support for victims of any crime. Court support workers, emotional support, and help understanding the criminal justice process.</p><a href="https://www.victimsupport.org.uk" target="_blank">victimsupport.org.uk</a> | <a href="tel:08081689111">08081 689 111</a></div>
+
+        <div class="scard" data-tags="legal"><div class="scard-top"><div class="sicon">⚖️</div><div><h3>Rights of Women</h3><div class="stype">Free Legal Advice</div></div></div><div class="stags"><span class="stag">Legal Help</span><span class="stag">Free</span></div><p>Free legal advice helplines staffed by solicitors and barristers. Covers sexual violence, domestic abuse, family law, and employment law.</p><a href="https://rightsofwomen.org.uk" target="_blank">rightsofwomen.org.uk</a> | <a href="tel:02072510500">020 7251 0500</a></div>
+
+        <div class="scard" data-tags="legal domestic"><div class="scard-top"><div class="sicon">🏛️</div><div><h3>Citizens Advice</h3><div class="stype">General Legal & Benefits</div></div></div><div class="stags"><span class="stag">Legal</span><span class="stag">Benefits</span><span class="stag">Housing</span></div><p>Free advice on legal options, housing, benefits, and signposting. Local branches across the UK.</p><a href="https://www.citizensadvice.org.uk" target="_blank">citizensadvice.org.uk</a> | <a href="tel:08001448848">0800 144 8848</a></div>
+
+        <div class="scard" data-tags="lgbt"><div class="scard-top"><div class="sicon">🌙</div><div><h3>Galop</h3><div class="stype">LGBT+ Specialist</div></div></div><div class="stags"><span class="stag">LGBT+</span><span class="stag">Domestic Abuse</span><span class="stag">Sexual Violence</span></div><p>Specialist support for LGBT+ people experiencing domestic abuse, sexual violence or hate crime. Understands specific barriers LGBT+ people face.</p><a href="https://galop.org.uk" target="_blank">galop.org.uk</a> | <a href="tel:08009995428">0800 999 5428</a></div>
+
+        <div class="scard" data-tags="sexual"><div class="scard-top"><div class="sicon">🔵</div><div><h3>NAPAC</h3><div class="stype">Historic / Childhood Abuse</div></div></div><div class="stags"><span class="stag">Historic</span><span class="stag">Childhood Abuse</span></div><p>National Association for People Abused in Childhood. Support for adult survivors of any type of childhood abuse.</p><a href="https://napac.org.uk" target="_blank">napac.org.uk</a> | <a href="tel:08088010331">0808 801 0331</a></div>
+
+        <div class="scard" data-tags="domestic"><div class="scard-top"><div class="sicon">📍</div><div><h3>Suzy Lamplugh Trust</h3><div class="stype">Stalking Helpline</div></div></div><div class="stags"><span class="stag">Stalking</span><span class="stag">Safety</span></div><p>National Stalking Helpline. Support and advice for those experiencing stalking or harassment.</p><a href="https://suzylamplugh.org" target="_blank">suzylamplugh.org</a> | <a href="tel:08088020300">0808 802 0300</a></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- VIDEOS -->
+  <div id="sec-videos" class="section">
+    <main>
+      <h2 class="sec-title">Educational Videos</h2>
+      <p class="sec-sub">Important videos on consent, rights, and support.</p>
+      <div class="vgrid">
+        <div class="vcard"><div class="vthumb"><iframe src="https://www.youtube.com/embed/pZwvrxVavnQ" title="Tea and Consent" allowfullscreen></iframe></div><div class="vinfo"><span class="vtag">Consent</span><h3>Tea and Consent</h3><p>The classic animated video explaining sexual consent using the analogy of a cup of tea. Used in UK schools and police training.</p></div></div>
+        <div class="vcard"><div class="vthumb"><iframe src="https://www.youtube.com/embed/D1PvIWdJ8xo" title="Coercive Control" allowfullscreen></iframe></div><div class="vinfo"><span class="vtag">Coercive Control</span><h3>What is Coercive Control?</h3><p>Women's Aid explains what coercive control looks like and why it's hard to recognise from the inside.</p></div></div>
+        <div class="vcard"><div class="vthumb"><iframe src="https://www.youtube.com/embed/K9v2Nf8TXGU" title="Reporting to Police" allowfullscreen></iframe></div><div class="vinfo"><span class="vtag">Reporting</span><h3>Reporting Sexual Violence to Police</h3><p>Rape Crisis walks through reporting, what to expect, and your rights at every stage.</p></div></div>
+        <div class="vcard"><div class="vthumb"><iframe src="https://www.youtube.com/embed/o7pMLT6CQOM" title="ISVA role" allowfullscreen></iframe></div><div class="vinfo"><span class="vtag">Support</span><h3>What is an ISVA?</h3><p>How an Independent Sexual Violence Adviser supports you — for free — throughout the process.</p></div></div>
+        <div class="vcard"><div class="vthumb"><iframe src="https://www.youtube.com/embed/J-LpgGqyxcI" title="Non-Molestation Order" allowfullscreen></iframe></div><div class="vinfo"><span class="vtag">Civil Protection</span><h3>Non-Molestation Orders Explained</h3><p>A solicitor explains what a non-molestation order is and how quickly it can protect you.</p></div></div>
+        <div class="vcard"><div class="vthumb"><iframe src="https://www.youtube.com/embed/XQaDO_QXRMA" title="Freeze Response" allowfullscreen></iframe></div><div class="vinfo"><span class="vtag">Empowerment</span><h3>Understanding the Freeze Response</h3><p>Why freezing during trauma is not consent — explained by a psychologist. Important for understanding your own reaction.</p></div></div>
+      </div>
+    </main>
+  </div>
+
+</div><!-- end real-app -->
+
+<script>
+// ===== PIN SYSTEM =====
+const REAL_PIN = '1234';
+const FAKE_PIN = '0000'; // Any wrong PIN shows decoy app
+let pinEntry = '';
+
+function pinKey(k) {
+  if (pinEntry.length >= 4) return;
+  pinEntry += k;
+  updateDots();
+  if (pinEntry.length === 4) checkPin();
+}
+function pinDel() {
+  pinEntry = pinEntry.slice(0,-1);
+  updateDots();
+}
+function updateDots() {
+  for(let i=0;i<4;i++) document.getElementById('d'+i).classList.toggle('filled',i<pinEntry.length);
+}
+function checkPin() {
+  setTimeout(()=>{
+    if(pinEntry === REAL_PIN) {
+      document.getElementById('decoy-screen').style.display='none';
+      document.getElementById('real-app').style.display='block';
+    } else {
+      // Wrong PIN — show fake decoy app
+      document.getElementById('decoy-screen').style.display='none';
+      document.getElementById('fake-app').style.display='block';
+    }
+    pinEntry='';
+    updateDots();
+  },200);
+}
+
+// ===== QUICK EXIT =====
+function quickExit() {
+  window.location.href = 'https://www.bbc.co.uk/weather';
+}
+
+// ===== NAVIGATION =====
+function showSec(id) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  window.scrollTo(0,0);
+}
+
+// ===== OFFENCES =====
+function showOff(id) {
+  document.getElementById('offences-list').style.display='none';
+  document.querySelectorAll('.offence-detail').forEach(d=>d.classList.remove('active'));
+  document.getElementById('off-'+id).classList.add('active');
+}
+function showOffList() {
+  document.getElementById('offences-list').style.display='block';
+  document.querySelectorAll('.offence-detail').forEach(d=>d.classList.remove('active'));
+}
+
+// ===== SUB TABS =====
+function showStab(id) {
+  document.querySelectorAll('.stab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.spanel').forEach(p=>p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('stab-'+id).classList.add('active');
+}
+
+// ===== ACCORDION =====
+function toggleEv(h) {
+  const b = h.nextElementSibling;
+  const ch = h.querySelector('span');
+  if(b.style.display==='none'){b.style.display='block';ch.style.transform='rotate(180deg)';}
+  else{b.style.display='none';ch.style.transform='rotate(0deg)';}
+}
+
+// ===== SUPPORT FILTER =====
+function filtSupport(tag,btn) {
+  document.querySelectorAll('.filt').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.scard').forEach(c=>{
+    if(tag==='all'){c.style.display='block';return;}
+    c.style.display=(c.dataset.tags||'').includes(tag)?'block':'none';
+  });
+}
+
+// ===== QUESTIONNAIRE =====
+const questions = [
+  {q:"Has anyone touched you sexually when you had not agreed or were unable to consent?",opts:["No","I'm not sure","Once","More than once"]},
+  {q:"Does your partner (or ex-partner) control where you go or who you see?",opts:["Never","Sometimes","Often","Always"]},
+  {q:"Do you feel frightened of your partner's anger or reactions?",opts:["Never","Sometimes","Often","Yes, regularly"]},
+  {q:"Has your partner humiliated or put you down in private or in front of others?",opts:["Never","Sometimes","Often","Regularly"]},
+  {q:"Has anyone shared or threatened to share intimate images of you without your permission?",opts:["No","Threatened but not done it","Yes, shared images","Both threatened and shared"]},
+  {q:"Has your partner monitored your phone, location or messages without your permission?",opts:["Never","Once or twice","Often","Constantly"]},
+  {q:"Has a partner ever controlled your access to money or stopped you from working?",opts:["No","Sometimes","Often","Yes, completely"]},
+  {q:"Have you experienced unwanted sexual comments, touching or harassment in public or online?",opts:["No","Once or twice","Several times","Regularly"]},
+  {q:"Do you feel like you are 'walking on eggshells' around your partner?",opts:["Never","Sometimes","Often","Always"]},
+  {q:"Has your partner ever used threats or force to make you do something sexual you didn't want?",opts:["No","Once","More than once","Regularly"]},
+];
+let qIdx=0, qAns=[];
+
+function renderQ() {
+  if(qIdx>=questions.length){showQResult();return;}
+  const q=questions[qIdx];
+  const prog=((qIdx)/questions.length)*100;
+  document.getElementById('q-container').innerHTML=`
+    <div class="qprog"><div class="qprogf" style="width:${prog}%"></div></div>
+    <div class="qnum">Question ${qIdx+1} of ${questions.length}</div>
+    <div class="qq">${q.q}</div>
+    <div class="qopts">${q.opts.map((o,i)=>`<button class="qopt" onclick="selQ(this,${i})">${o}</button>`).join('')}</div>
+    <div class="qnav">
+      <button class="btn-backq" onclick="prevQ()" ${qIdx===0?'disabled style="opacity:0.3"':''}>← Back</button>
+      <button class="btn-next" id="qnext" onclick="nextQ()" disabled>Next →</button>
+    </div>`;
+}
+function selQ(el,i){
+  document.querySelectorAll('.qopt').forEach(o=>o.classList.remove('selected'));
+  el.classList.add('selected');
+  qAns[qIdx]=i;
+  document.getElementById('qnext').disabled=false;
+}
+function nextQ(){if(qAns[qIdx]===undefined)return;qIdx++;renderQ();}
+function prevQ(){if(qIdx>0){qIdx--;renderQ();}}
+function showQResult(){
+  const concern=qAns.filter((a,i)=>a>=2).length;
+  const severe=qAns.filter((a,i)=>(i===0&&a>=2)||(i===9&&a>=1)||(i===4&&a>=1)).length;
+  let html='';
+  if(concern===0){
+    html=`<div class="qres"><div class="qres-icon">💚</div><h3>Your responses don't suggest current concerns</h3><p>If anything changes, this tool is always here. If you have concerns for a friend, speak to one of the support organisations in our Support section.</p></div>`;
+  } else if(concern<=2){
+    html=`<div class="qres"><div class="qres-icon">🟡</div><h3>Some responses suggest you may be experiencing difficulties</h3><p>You don't have to be certain to reach out. Speaking to a specialist can help you make sense of what you're experiencing.</p>
+    <div class="res-concerned"><h4>We suggest reaching out to:</h4><p>• <strong>Women's Aid</strong> live chat: womensaid.org.uk<br>• <strong>National DA Helpline:</strong> 0808 2000 247 (free, 24/7)<br>• Your GP — they can refer you to local support</p></div></div>`;
+  } else {
+    html=`<div class="qres"><div class="qres-icon">🔴</div><h3>Your answers suggest you may be experiencing abuse</h3><p>What you are experiencing is <strong>not your fault</strong>. You are believed. Help is available right now.</p>
+    <div class="res-concerned"><h4>Please reach out today:</h4><p>• <strong>Danger right now:</strong> Call 999<br>• <strong>National DA Helpline:</strong> 0808 2000 247 (free, 24/7)<br>• <strong>Rape Crisis:</strong> 0808 802 9999 (free, 24/7)<br>• <strong>Women's Aid:</strong> womensaid.org.uk (live chat)<br><br>${severe>0?'<strong>Your answers suggest a possible criminal offence may have occurred.</strong> An ISVA can support you in total confidence, even if you are not ready to report to police.':''}</p></div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:20px;flex-wrap:wrap">
+      <button class="btn-next" onclick="showSec('evidence')">Evidence guidance</button>
+      <button class="btn-next" style="background:var(--sage)" onclick="showSec('support')">Find support</button>
+    </div></div>`;
+  }
+  document.getElementById('q-container').innerHTML=html+`<div style="text-align:center;margin-top:20px"><button class="btn-backq" onclick="restartQ()">Start again</button></div>`;
+}
+function restartQ(){qIdx=0;qAns=[];renderQ();}
+renderQ();
+
+// ===== TRACKER =====
+let trackerActive=false, trackerInterval=null;
+function startTracker(){
+  trackerActive=true;
+  document.getElementById('tracker-dot').classList.add('active');
+  document.getElementById('tracker-status-text').textContent='Tracker is active';
+  document.getElementById('tracker-status-sub').textContent='Your location is being monitored. Stay safe! 💚';
+  document.getElementById('tracker-start-btn').style.display='none';
+  document.getElementById('tracker-stop-btn').style.display='block';
+  // In a real app: navigator.geolocation.watchPosition(...)
+  alert('Safety tracker started. In the full app, this would share your location with '+document.getElementById('t-name').value+' every '+document.getElementById('t-interval').value+' minutes via SMS.');
+}
+function stopTracker(){
+  trackerActive=false;
+  document.getElementById('tracker-dot').classList.remove('active');
+  document.getElementById('tracker-status-text').textContent='Tracker is off';
+  document.getElementById('tracker-status-sub').textContent='You stopped the tracker safely. ✓';
+  document.getElementById('tracker-start-btn').style.display='block';
+  document.getElementById('tracker-stop-btn').style.display='none';
+}
+function sendSOS(){
+  const msg=document.getElementById('t-sos').value;
+  const contact=document.getElementById('t-name').value||'your emergency contact';
+  alert('SOS SENT to '+contact+'!\n\nMessage: '+msg+'\n\n(In the full app this sends an SMS with your GPS coordinates. Call 999 now if in immediate danger.)');
+}
+</script>
+</body>
+</html>
