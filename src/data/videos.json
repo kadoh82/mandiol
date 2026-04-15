@@ -1,0 +1,90 @@
+[
+  {
+    "id": "tea-consent",
+    "title": "Tea and Consent",
+    "youtubeId": "pZwvrxVavnQ",
+    "url": "https://youtu.be/pZwvrxVavnQ",
+    "category": "consent",
+    "offences": ["rape", "sexual-assault"],
+    "description": "This classic animated video explains sexual consent simply and clearly using the analogy of making someone a cup of tea. Widely used in UK schools and police training.",
+    "duration": "2:50",
+    "recommended": true
+  },
+  {
+    "id": "coercive-control-wa",
+    "title": "What is Coercive Control?",
+    "youtubeId": "D1PvIWdJ8xo",
+    "url": "https://youtu.be/D1PvIWdJ8xo",
+    "category": "coercive-control",
+    "offences": ["coercive-control"],
+    "description": "Women's Aid explains what coercive control looks like in a relationship, how it escalates, and why it can be so hard to recognise from the inside.",
+    "duration": "4:12",
+    "recommended": true
+  },
+  {
+    "id": "reporting-rape-crisis",
+    "title": "Reporting Sexual Violence to the Police",
+    "youtubeId": "K9v2Nf8TXGU",
+    "url": "https://youtu.be/K9v2Nf8TXGU",
+    "category": "reporting",
+    "offences": ["rape", "sexual-assault"],
+    "description": "Rape Crisis England & Wales walks through what the reporting process looks like, what to expect at each stage, and your rights as a victim.",
+    "duration": "6:30",
+    "recommended": true
+  },
+  {
+    "id": "isva-explained",
+    "title": "What is an ISVA?",
+    "youtubeId": "o7pMLT6CQOM",
+    "url": "https://youtu.be/o7pMLT6CQOM",
+    "category": "support",
+    "offences": ["rape", "sexual-assault"],
+    "description": "Explains the role of an Independent Sexual Violence Adviser — how they support you through the police investigation and court process, at no cost to you.",
+    "duration": "3:45",
+    "recommended": true
+  },
+  {
+    "id": "non-mol-order",
+    "title": "Non-Molestation Orders Explained",
+    "youtubeId": "J-LpgGqyxcI",
+    "url": "https://youtu.be/J-LpgGqyxcI",
+    "category": "civil",
+    "offences": ["coercive-control", "domestic-abuse"],
+    "description": "A solicitor explains what a non-molestation order is, how to apply, how quickly it can be granted, and what happens if it is breached.",
+    "duration": "5:10",
+    "recommended": false
+  },
+  {
+    "id": "revenge-porn-rights",
+    "title": "Revenge Porn: Know Your Rights",
+    "youtubeId": "Uk4GjpP7lOI",
+    "url": "https://youtu.be/Uk4GjpP7lOI",
+    "category": "online-abuse",
+    "offences": ["revenge-porn", "deepfakes"],
+    "description": "Overview of the law around non-consensual intimate image sharing, what you can do immediately, and where to get specialist help.",
+    "duration": "4:55",
+    "recommended": false
+  },
+  {
+    "id": "clares-law",
+    "title": "Clare's Law — What Is It and How Do You Use It?",
+    "youtubeId": "5bRcVqy0MKY",
+    "url": "https://youtu.be/5bRcVqy0MKY",
+    "category": "clares-law",
+    "offences": ["coercive-control", "domestic-abuse"],
+    "description": "Explains the Domestic Violence Disclosure Scheme — your right to ask police if a partner has a history of abuse.",
+    "duration": "3:20",
+    "recommended": false
+  },
+  {
+    "id": "freeze-response",
+    "title": "Understanding the Freeze Response in Trauma",
+    "youtubeId": "XQaDO_QXRMA",
+    "url": "https://youtu.be/XQaDO_QXRMA",
+    "category": "empowerment",
+    "offences": ["rape", "sexual-assault"],
+    "description": "A psychologist explains why people freeze during traumatic events — and why freezing is not consent. Important for understanding your own reaction.",
+    "duration": "7:15",
+    "recommended": true
+  }
+]
