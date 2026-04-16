@@ -131,17 +131,41 @@ mandiol/
 │   ├── next.config.js
 │   ├── tailwind.config.ts ← Web Tailwind config (same design tokens)
 │   ├── app/               ← Next.js App Router pages
-│   │   ├── layout.tsx
-│   │   ├── page.tsx       ← Home page
+│   │   ├── layout.tsx     ← Root layout (EmergencyBar, BottomNav, QuickExit)
+│   │   ├── page.tsx       ← Home dashboard with module cards
 │   │   ├── components/
-│   │   │   └── QuickExitButton.tsx
-│   │   └── offences/
-│   │       ├── page.tsx   ← Offence list
-│   │       └── [id]/
-│   │           └── page.tsx ← Offence detail
+│   │   │   ├── QuickExitButton.tsx
+│   │   │   ├── EmergencyBar.tsx   ← Persistent emergency contacts bar
+│   │   │   └── BottomNav.tsx      ← 5-tab mobile navigation
+│   │   ├── offences/
+│   │   │   ├── page.tsx           ← Offence list
+│   │   │   └── [id]/page.tsx      ← Offence detail (8 offences)
+│   │   ├── police-process/
+│   │   │   ├── page.tsx           ← Police process index
+│   │   │   └── [section]/page.tsx ← 5 sections (reporting, SARC, statement, suspect, court)
+│   │   ├── civil/
+│   │   │   ├── page.tsx           ← Civil protection index
+│   │   │   └── [type]/page.tsx    ← 6 types (non-mol, occupation, DVPO, restraining, CICA, image removal)
+│   │   ├── clares-law/page.tsx    ← Clare's Law, Sarah's Law (single page)
+│   │   ├── non-recent/page.tsx    ← Non-recent offences (single page)
+│   │   ├── support/
+│   │   │   ├── page.tsx           ← Support directory (server component)
+│   │   │   └── SupportDirectory.tsx ← Filterable client component
+│   │   ├── videos/page.tsx        ← Video gallery with YouTube embeds
+│   │   ├── questionnaire/
+│   │   │   ├── page.tsx           ← Questionnaire entry (lists all available)
+│   │   │   └── [offenceId]/page.tsx ← Per-offence questionnaire placeholder
+│   │   ├── evidence/
+│   │   │   ├── page.tsx           ← Evidence index
+│   │   │   └── [section]/page.tsx ← 5 sections (digital, physical, forensic, checklist, diary)
+│   │   ├── settings/page.tsx      ← Settings mock (native app preview)
+│   │   ├── about/page.tsx         ← About & disclaimers
+│   │   ├── more/page.tsx          ← Full navigation hub
+│   │   └── not-found.tsx          ← 404 page
 │   ├── lib/
 │   │   ├── offences.ts    ← Reads ../content/offences at build time
-│   │   └── data.ts        ← Reads ../src/data at build time
+│   │   ├── data.ts        ← Reads ../src/data at build time
+│   │   └── markdown.ts    ← Generic markdown loader for any content subdir
 │   └── public/
 │       └── manifest.json  ← PWA manifest
 ├── app/                   ← Expo Router file-based routes

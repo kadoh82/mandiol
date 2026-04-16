@@ -1,20 +1,15 @@
 "use client";
 
 /**
- * QuickExitButton — persistent on every page.
+ * QuickExitButton — always in the header bar.
  *
- * On the web PWA this navigates immediately to BBC Weather (the default
- * safe exit URL). On the native app the equivalent component also clears
- * the app from recents and resets the nav stack.
- *
- * Positioned bottom-right, subtle but always findable.
+ * On the web PWA this navigates immediately to BBC Weather.
  * Single tap — no confirmation dialog.
  */
 export default function QuickExitButton() {
   const exitUrl = "https://www.bbc.co.uk/weather";
 
   function handleExit() {
-    // Replace current history entry so the back button won't return here.
     window.location.replace(exitUrl);
   }
 
@@ -23,11 +18,11 @@ export default function QuickExitButton() {
       onClick={handleExit}
       aria-label="Quick exit — leave this site immediately"
       title="Leave this site"
-      className="fixed bottom-6 right-6 z-50 flex h-11 w-11 items-center justify-center rounded-full bg-plum/80 text-white shadow-lg backdrop-blur transition-colors hover:bg-plum focus:outline-none focus:ring-2 focus:ring-rose focus:ring-offset-2"
+      className="flex h-8 items-center gap-1.5 rounded-full bg-white/15 px-3 text-xs font-medium text-white transition-colors hover:bg-white/25"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        className="h-5 w-5"
+        className="h-3.5 w-3.5"
         viewBox="0 0 20 20"
         fill="currentColor"
         aria-hidden="true"
@@ -38,6 +33,7 @@ export default function QuickExitButton() {
           clipRule="evenodd"
         />
       </svg>
+      Exit
     </button>
   );
 }

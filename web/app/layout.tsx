@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import QuickExitButton from "./components/QuickExitButton";
+import EmergencyBar from "./components/EmergencyBar";
+import BottomNav from "./components/BottomNav";
 
 export const metadata: Metadata = {
   title: "Mandiol",
@@ -29,41 +31,38 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-cream font-body text-ink min-h-screen antialiased">
-        <header className="bg-plum text-white">
-          <nav className="mx-auto flex max-w-3xl items-center justify-between px-5 py-4">
-            <a
-              href="/"
-              className="font-heading text-2xl tracking-wide text-white no-underline"
-            >
-              Mandiol
-            </a>
-            <a
-              href="/offences"
-              className="text-sm font-medium text-cream-200 transition-colors hover:text-white"
-            >
-              Know your rights
-            </a>
-          </nav>
-        </header>
+        {/* Desktop: center the app in an app-like preview frame */}
+        <div className="mx-auto min-h-screen w-full max-w-md bg-cream shadow-2xl md:my-4 md:min-h-0 md:rounded-2xl md:border md:border-border md:overflow-hidden">
+          {/* Emergency contacts bar — always visible */}
+          <EmergencyBar />
 
-        <main className="mx-auto max-w-3xl px-5 py-8">{children}</main>
+          {/* App header */}
+          <header className="bg-plum text-white">
+            <div className="flex items-center justify-between px-4 py-3">
+              <a
+                href="/"
+                className="font-heading text-xl tracking-wide text-white no-underline"
+              >
+                Mandiol
+              </a>
+              <QuickExitButton />
+            </div>
+          </header>
 
-        <footer className="border-t border-border bg-cream-200 mt-16">
-          <div className="mx-auto max-w-3xl px-5 py-6 text-sm text-ink-muted">
+          {/* Page content — padded for bottom nav */}
+          <main className="px-4 py-5 pb-safe">{children}</main>
+
+          {/* Footer disclaimer */}
+          <footer className="border-t border-border bg-cream-200 px-4 py-4 pb-20 text-xs text-ink-muted">
             <p>
               This is information, not legal advice. All content applies to
               England &amp; Wales.
             </p>
-            <p className="mt-2">
-              If you are in immediate danger, call{" "}
-              <a href="tel:999" className="font-medium text-alert underline">
-                999
-              </a>
-            </p>
-          </div>
-        </footer>
+          </footer>
 
-        <QuickExitButton />
+          {/* Bottom tab navigation */}
+          <BottomNav />
+        </div>
       </body>
     </html>
   );
