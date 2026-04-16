@@ -14,7 +14,38 @@ This file is the single source of truth for AI coding agents (Claude Code, Copil
 
 ---
 
+## Dual Structure
+
+This repo contains two targets that share the same content and data:
+
+| Directory | Purpose | Stack |
+|-----------|---------|-------|
+| `/app`, `/src`, `/constants` | **Production** React Native mobile app (Expo) | React Native, Expo Router, NativeWind |
+| `/web` | **Prototype** Next.js PWA for fast design & content iteration | Next.js 14 App Router, Tailwind CSS |
+| `/content` | **Shared** legal markdown files (offences, police process, civil) | Markdown with YAML frontmatter |
+| `/src/data` | **Shared** structured JSON (agencies, videos, questionnaires) | JSON |
+
+### How the two targets relate
+
+- The **web PWA** (`/web`) is a design and content prototyping tool — it reads directly from `/content` and `/src/data` at build time so content changes are immediately visible without a native build cycle.
+- The **React Native app** (`/app` + `/src`) is the production target — it bundles the same content/data and adds encryption, PIN auth, decoy mode, quick exit, and native features.
+- **Never duplicate content.** Both targets must read from the shared `/content` and `/src/data` directories.
+
+### Web PWA commands
+
+```bash
+cd web
+npm install                       # Install web dependencies (first time)
+npm run dev                       # Start Next.js on localhost:3000
+npm run build                     # Production build
+npm run start                     # Serve production build on localhost:3000
+```
+
+---
+
 ## Tech Stack
+
+### Mobile (Production)
 
 | Layer | Technology |
 |-------|-----------|
@@ -34,9 +65,23 @@ This file is the single source of truth for AI coding agents (Claude Code, Copil
 | CI/CD | EAS Build + EAS Submit |
 | OTA Updates | EAS Update (content changes without app store review) |
 
+### Web PWA (Prototype)
+
+| Layer | Technology |
+|-------|-----------|
+| Framework | Next.js 14 (App Router) |
+| Language | TypeScript (strict mode) |
+| Styling | Tailwind CSS (same Mandiol design tokens) |
+| Content | gray-matter + remark (reads shared `/content` markdown) |
+| Data | Reads shared `/src/data` JSON at build time |
+| Fonts | Georgia (headings), DM Sans (body) via Google Fonts |
+| PWA | Web app manifest for Add to Home Screen |
+
 ---
 
 ## Build & Run Commands
+
+### Mobile
 
 ```bash
 npx expo start                    # Start dev server
@@ -50,6 +95,17 @@ npm test                          # Run unit tests
 npm run lint                      # Lint check
 ```
 
+### Web PWA
+
+```bash
+cd web
+npm install                       # Install web dependencies (first time)
+npm run dev                       # Start Next.js on localhost:3000
+npm run build                     # Production build
+npm run start                     # Serve production build
+npm run lint                      # Lint check
+```
+
 ---
 
 ## Project Structure
@@ -59,7 +115,35 @@ mandiol/
 ├── CLAUDE.md              ← This file (read by Claude Code at session start)
 ├── SPEC.md                ← Full product specification (feature reference)
 ├── app.json               ← Expo configuration
-├── tailwind.config.js     ← NativeWind with Mandiol design tokens
+├── tailwind.config.js     ← NativeWind with Mandiol design tokens (mobile)
+├── content/               ← SHARED legal content in markdown (both targets read this)
+│   └── offences/          ← One .md per offence (frontmatter + body)
+│       ├── rape.md
+│       ├── sexual-assault-s2.md
+│       ├── sexual-assault-s3.md
+│       ├── sexual-harassment.md
+│       ├── voyeurism.md
+│       ├── coercive-control.md
+│       ├── revenge-porn.md
+│       └── deepfakes.md
+├── web/                   ← Next.js 14 PWA (prototype / design iteration)
+│   ├── package.json
+│   ├── next.config.js
+│   ├── tailwind.config.ts ← Web Tailwind config (same design tokens)
+│   ├── app/               ← Next.js App Router pages
+│   │   ├── layout.tsx
+│   │   ├── page.tsx       ← Home page
+│   │   ├── components/
+│   │   │   └── QuickExitButton.tsx
+│   │   └── offences/
+│   │       ├── page.tsx   ← Offence list
+│   │       └── [id]/
+│   │           └── page.tsx ← Offence detail
+│   ├── lib/
+│   │   ├── offences.ts    ← Reads ../content/offences at build time
+│   │   └── data.ts        ← Reads ../src/data at build time
+│   └── public/
+│       └── manifest.json  ← PWA manifest
 ├── app/                   ← Expo Router file-based routes
 │   ├── _layout.tsx        ← Root layout (AuthGate wrapper + QuickExit)
 │   ├── index.tsx           ← Entry point → redirects to auth
